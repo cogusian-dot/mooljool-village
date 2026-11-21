@@ -343,6 +343,53 @@ button:focus-visible, input:focus-visible { outline: 4px solid rgba(59,168,240,.
 .ibar { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 4; display: flex; gap: 12px; padding: 10px; border-radius: 99px; background: rgba(255,248,239,.82); backdrop-filter: blur(10px); box-shadow: 0 10px 30px -10px rgba(90,50,20,.4); font-family: var(--jua); }
 .ibar .btn { font-size: 19px; white-space: nowrap; }
 
+/* ── 설명 페이지: 2026 GTEC 최종 포스터 내용 ── */
+.ptag { display: inline-block; background: #5B4FC9; color: #fff; font-weight: 800; font-size: 15px; padding: 6px 16px 7px; border-radius: 99px; margin-bottom: 14px; }
+.isec .lede b { color: #5B4FC9; }
+.picon li { grid-template-columns: 34px 1fr 64px; }
+.picon li img { width: 64px; height: 40px; object-fit: contain; }
+.pio { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 28px; }
+.pio li { background: #fff; border-radius: 22px; padding: 16px 18px; box-shadow: 0 5px 0 #F0DCC8; display: flex; gap: 12px; align-items: center; position: relative; }
+.pio li + li::before { content: '›'; position: absolute; left: -13px; top: 50%; transform: translateY(-50%); color: #5B4FC9; font-weight: 900; font-size: 22px; }
+.pio em { font-style: normal; flex: none; background: #5B4FC9; color: #fff; font-weight: 800; font-size: 14px; padding: 5px 12px 6px; border-radius: 99px; }
+.pio b { font-weight: 800; font-size: 15.5px; line-height: 1.45; word-break: keep-all; }
+.pstep { grid-template-columns: repeat(4, 1fr); }
+.pstep b::before { content: 'STEP ' counter(m) '  '; color: #5B4FC9; font-size: 13px; }
+.pimprove { display: grid; grid-template-columns: 1fr auto 1fr; gap: 24px; align-items: center; margin-top: 36px; }
+.pimprove figure { position: relative; }
+.pimprove figure img { border-radius: 24px; box-shadow: 0 5px 0 #F0DCC8; cursor: zoom-in; width: 100%; }
+.pimprove figcaption { position: absolute; left: 14px; bottom: 14px; background: #fff; padding: 5px 14px 6px; border-radius: 99px; font-weight: 700; font-size: 14px; }
+.parrow { font-size: 54px; font-weight: 900; color: #5B4FC9; }
+.pimpT { font-weight: 900; font-size: 20px; color: #5B4FC9; margin-bottom: 12px; }
+.pimprove ol { list-style: none; counter-reset: i; display: grid; gap: 10px; }
+.pimprove ol li { counter-increment: i; background: #fff; border-radius: 18px; padding: 14px 16px 14px 54px; position: relative; font-weight: 700; font-size: 16px; box-shadow: 0 4px 0 #F0DCC8; word-break: keep-all; }
+.pimprove ol li::before { content: counter(i); position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 26px; height: 26px; border-radius: 50%; background: #EEEBFF; color: #5B4FC9; display: grid; place-items: center; font-weight: 900; font-size: 13px; }
+.pnote { margin-top: 22px; background: #fff; border-radius: 99px; padding: 14px 24px; text-align: center; font-weight: 600; font-size: 15.5px; color: #5B4FC9; box-shadow: 0 4px 0 #F0DCC8; word-break: keep-all; }
+.pnote b { font-weight: 900; margin-right: 6px; }
+.pfinal { display: grid; grid-template-columns: 1.6fr 1fr; gap: 18px; margin-top: 34px; }
+.phero { position: relative; background: linear-gradient(160deg, #1F2440, #2E3557); border-radius: 30px; overflow: hidden; min-height: 520px; display: flex; flex-direction: column; justify-content: flex-end; }
+.phero > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; cursor: zoom-in; }
+.phTxt { position: absolute; top: 28px; left: 30px; z-index: 1; color: #fff; pointer-events: none; }
+.phTxt h3 { font-size: clamp(30px, 3.4vw, 48px); font-weight: 900; line-height: 1.1; letter-spacing: -.03em; }
+.phTxt h3 span { color: #7CC8FF; }
+.phTxt p { margin-top: 14px; font-size: 16px; line-height: 1.6; opacity: .9; }
+.pchips { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 8px; padding: 0 22px 22px; pointer-events: none; }
+.pchips span { border: 1.5px solid rgba(255,255,255,.75); color: #fff; border-radius: 99px; padding: 6px 14px 7px; font-size: 13.5px; font-weight: 600; background: rgba(20,24,48,.55); }
+.pside { display: grid; grid-template-rows: auto 1fr; gap: 18px; }
+.papp { background: #fff; border-radius: 30px; padding: 22px; box-shadow: 0 6px 0 #F0DCC8; }
+.pappT { font-weight: 900; font-size: 18px; color: #5B4FC9; }
+.pappS { font-size: 14px; color: #8E7563; margin-top: 4px; line-height: 1.5; word-break: keep-all; }
+.pappImgs { display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: 1fr 1fr; gap: 8px; margin-top: 14px; }
+.pappImgs img { width: 100%; height: 100%; object-fit: cover; object-position: top; border-radius: 14px; border: 1px solid #EEE4DA; cursor: zoom-in; aspect-ratio: 1170 / 2535; }
+.pappImgs .main { grid-row: span 2; }
+.pslogan { background: #0E6B47; color: #fff; border-radius: 30px; padding: 28px 28px 24px; display: flex; flex-direction: column; justify-content: center; }
+.pslogan p { font-size: 22px; font-weight: 800; line-height: 1.35; }
+.pslogan hr { border: 0; border-top: 1.5px solid rgba(255,255,255,.7); margin: 16px 0; }
+.pslogan b { font-size: clamp(30px, 3vw, 42px); font-weight: 900; line-height: 1.12; letter-spacing: -.03em; }
+.pslogan small { margin-top: 18px; font-size: 13px; font-weight: 700; opacity: .85; }
+.pstate { margin-top: 18px; }
+.pposter { display: block; width: min(720px, 100%); margin: 30px auto 0; border-radius: 18px; box-shadow: 0 20px 40px -20px rgba(60,30,120,.45); cursor: zoom-in; }
+
 @media (max-width: 900px) {
   #charGrid { grid-template-columns: repeat(4, 1fr); }
   #seedGrid { grid-template-columns: repeat(4, 1fr); } #seedDetail { grid-template-columns: 1fr; }
@@ -350,6 +397,8 @@ button:focus-visible, input:focus-visible { outline: 4px solid rgba(59,168,240,.
   .ihero, .why, .inside, .bannerRow { grid-template-columns: 1fr; }
   .duo { grid-template-columns: 1fr 1fr; } .flow { grid-template-columns: repeat(3, 1fr); } .make { grid-template-columns: repeat(2, 1fr); }
   .gal { grid-template-columns: repeat(2, 1fr); } .specs, .team { grid-template-columns: repeat(2, 1fr); }
+  .pio, .pfinal { grid-template-columns: 1fr; } .pio li + li::before { display: none; }
+  .pimprove { grid-template-columns: 1fr; } .parrow { display: none; }
   #objective { max-width: calc(100vw - 32px); top: 80px; font-size: 17px; }
   #keysHint { display: none; }
 }

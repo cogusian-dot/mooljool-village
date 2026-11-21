@@ -164,94 +164,106 @@
       </div>
     </header>
 
+    <!-- 아래 네 칸은 2026 GTEC 최종 포스터(MooljoolDay_GTEC_포스터최종.pptx) 내용 그대로예요 -->
     <section class="isec why">
       <div>
-        <h2>돌보고 싶은 마음은 있는데,<br>언제 물을 줘야 할지 몰라요</h2>
-        <p class="lede">관리 경험이 부족하면 흙의 수분 상태와 물 줄 시점을 판단하기 어려워요. 그렇다고 자동급수 화분은 사람 대신 물을 줘 버려서, 직접 돌보며 성장을 지켜보는 즐거움이 줄어들지요.</p>
+        <p class="ptag">배경 및 목적</p>
+        <h2>물 줄 때를 알고,<br>돌봄은 내가 직접</h2>
         <div class="stat">
           <div><b>36.1%</b><span>전체 가구 중 1인 가구<br>(2024년 기준)</span></div>
-          <div><b>55%</b><span>반려식물을 키우는 이유<br>‘정서적 교감·안정’</span></div>
+          <div><b>55%</b><span>반려식물 재배 목적<br>‘정서적 교감·안정’ (2022년 소비자 조사)</span></div>
         </div>
+        <p class="lede">관리 경험이 부족하면 <b>흙의 수분 상태와 물 줄 시점</b>을 판단하기 어렵고, 자동급수 제품은 <b>직접 돌보는 즐거움</b>을 줄입니다.</p>
         <p class="src">출처: 국가데이터처 「2025 통계로 보는 1인가구」 · 농촌진흥청 소비자 조사(2022, 874명)</p>
       </div>
       <div>
-        <p style="color:#C9663A;padding:0 0 12px 4px;font-size:16px;font-weight:800">그래서 세운 목표</p>
+        <p style="color:#5B4FC9;padding:0 0 12px 4px;font-size:16px;font-weight:800">그래서 세운 목표</p>
         <ol class="goals">
-          <li>흙이 마르면 물방울이 올라오는 직관적인 알림</li>
-          <li>물은 사용자가 직접 — 돌보는 즐거움은 그대로</li>
-          <li>두 눈과 물방울로 표정을 짓는 감성적인 캐릭터 디자인</li>
+          <li>흙이 마르면 물방울이 올라오는 직관적 알림</li>
+          <li>물은 사용자가 직접 — 돌보는 즐거움 유지</li>
+          <li>두 눈과 물방울의 감성적인 캐릭터 디자인</li>
         </ol>
       </div>
     </section>
 
     <section class="isec">
-      <h2>물방울 하나로 말해요</h2>
-      <p class="lede">평소엔 물방울이 쏙 숨어 있다가, 흙이 마르면 위로 올라와요. 모터 하나와 랙·피니언 기어로 물방울과 양쪽 뚜껑을 함께 움직여요.</p>
-      <div class="duo">
-        <figure><img data-a="assets/img/func_normal.webp" data-zoom alt="수분이 충분할 때 물방울이 숨어 있는 단면"><figcaption>수분 정상<small>물방울이 숨어 있어요</small></figcaption></figure>
-        <figure><img data-a="assets/img/func_dry.webp" data-zoom alt="흙이 말라 물방울이 올라온 단면"><figcaption>건조 감지<small>물방울이 쏙 올라와요</small></figcaption></figure>
-        <figure><video data-a="assets/video/mechanism.mp4" muted loop autoplay playsinline></video><figcaption>작동 원리<small>공통 축 피니언으로 물방울·뚜껑 동시 구동</small></figcaption></figure>
-      </div>
-      <ol class="flow">
-        <li><b>평상시</b><span>6시간마다 흙 수분 측정</span></li>
-        <li><b>건조 확인</b><span>3회 연속 건조일 때만</span></li>
-        <li class="hot"><b>물방울 상승</b><span>모터 정회전 · 뚜껑 열림</span></li>
-        <li class="hot"><b>직접 물 주기</b><span>신호를 보고 내가 직접</span></li>
-        <li><b>회복 확인</b><span>2회 연속 수분 회복</span></li>
-        <li><b>물방울 하강</b><span>모터 역회전 · 뚜껑 닫힘</span></li>
-      </ol>
-    </section>
-
-    <section class="isec">
+      <p class="ptag">주요 구성요소</p>
       <h2>흙과 전자부를 나눈 속 구조</h2>
       <div class="inside">
-        <img data-a="assets/img/cutaway.webp" data-zoom alt="땀땀이 내부 단면도">
-        <ol class="parts">
-          <li><div><b>정전용량식 토양수분센서</b><span>흙 속 수분 상태를 측정</span></div></li>
-          <li><div><b>ESP32-C3 제어보드</b><span>센서값 처리 및 모터 제어 · Wi-Fi/BLE</span></div></li>
-          <li><div><b>서보모터</b><span>구동 기어에 회전력 전달</span></div></li>
-          <li><div><b>랙 · 피니언 기어</b><span>회전운동을 직선운동으로 변환</span></div></li>
-          <li><div><b>물방울 표시기</b><span>흙의 건조 상태를 움직임으로 표현</span></div></li>
-          <li><div><b>서랍식 물받이</b><span>빠진 물을 모아 분리·세척</span></div></li>
+        <img data-a="assets/img/poster/parts.jpg" data-zoom alt="땀땀이 내부 단면과 부품 번호">
+        <ol class="parts picon">
+          <li><div><b>정전용량식 토양수분센서</b><span>흙 속 수분 상태 측정</span></div><img data-a="assets/img/poster/p1.png" alt=""></li>
+          <li><div><b>ESP32-C3 제어보드</b><span>센서값 처리 및 모터 제어</span></div><img data-a="assets/img/poster/p2.png" alt=""></li>
+          <li><div><b>서보모터</b><span>구동 기어에 회전력 전달</span></div><img data-a="assets/img/poster/p3.png" alt=""></li>
+          <li><div><b>랙·피니언 기어</b><span>회전운동을 직선운동으로 변환</span></div><img data-a="assets/img/poster/p4.png" alt=""></li>
+          <li><div><b>물방울 표시기</b><span>흙의 건조 상태를 움직임으로 표현</span></div><img data-a="assets/img/poster/p5.png" alt=""></li>
+          <li><div><b>서랍식 물받이</b><span>배출구 분리·세척</span></div><img data-a="assets/img/poster/p6.png" alt=""></li>
         </ol>
       </div>
-    </section>
-
-    <section class="isec">
-      <h2>이렇게 만들었어요</h2>
-      <ol class="make">
-        <li><img data-a="assets/img/matte_white.webp" data-zoom alt="초기 외형"><b>문제 분석·기획</b><span>기존 제품을 조사하고 물방울로 알리는 콘셉트 선정</span></li>
-        <li><img data-a="assets/img/cad_cut.webp" data-zoom alt="내부 설계 CAD"><b>3D 모델링·내부 설계</b><span>Inventor로 식재부·배수부·전자부 공간 설계</span></li>
-        <li><img data-a="assets/img/cad_drop.webp" data-zoom alt="물방울 구동부"><b>랙·피니언 구동</b><span>모터 회전을 직선 운동으로 바꿔 물방울 승강</span></li>
-        <li><img data-a="assets/img/proto.webp" data-zoom alt="3D 프린팅 시제품"><b>3D 프린팅 시제품</b><span>외형을 출력해 크기·비율과 부품 배치 검토</span></li>
-        <li><img data-a="assets/slides/s-12.jpg" data-zoom alt="앱 연계 화면"><b>AI·앱 연계</b><span>식물 인식·성장 기록 기능과 앱 UI/UX 시안</span></li>
+      <ol class="pio">
+        <li><em>입력</em><b>토양수분센서가 흙 속 수분을 측정</b></li>
+        <li><em>처리</em><b>ESP32-C3가 3회 연속 건조를 확인</b></li>
+        <li><em>출력</em><b>서보모터 + 랙·피니언으로 물방울 상승·덮개 열림</b></li>
       </ol>
     </section>
 
     <section class="isec">
+      <p class="ptag">제작 과정</p>
+      <h2>이렇게 만들었어요</h2>
+      <ol class="make pstep">
+        <li><img data-a="assets/img/poster/step1.jpg" data-zoom alt="문제 분석과 콘셉트 이미지"><b>문제 분석·콘셉트 기획</b><span>기존 제품을 조사하고 물방울로 알리는 콘셉트 선정</span></li>
+        <li><img data-a="assets/img/poster/step2.jpg" data-zoom alt="내부 설계 CAD"><b>3D 모델링·내부 설계</b><span>Inventor로 식재부·배수부·전자부 공간 설계</span></li>
+        <li><img data-a="assets/img/poster/step3.jpg" data-zoom alt="3D 프린팅 시제품"><b>3D 프린팅 시제품</b><span>외형을 출력해 크기·비율과 부품 배치 검토</span></li>
+        <li><img data-a="assets/img/poster/step4.jpg" data-zoom alt="앱 UI/UX 시안"><b>AI·앱 UI/UX 설계</b><span>식물 인식·성장 기록 기능을 구상하고 앱 시안 제작</span></li>
+      </ol>
+      <div class="pimprove">
+        <figure><img data-a="assets/img/poster/concept.jpg" data-zoom alt="외형 시안"><figcaption>외형 시안</figcaption></figure>
+        <span class="parrow">›</span>
+        <div>
+          <p class="pimpT">개선 포인트</p>
+          <ol>
+            <li>물방울 출입구에 양쪽 슬라이드 뚜껑 적용</li>
+            <li>모터 1개로 물방울·뚜껑 동시 구동</li>
+            <li>흙과 전자부를 분리한 내부 구조</li>
+          </ol>
+        </div>
+      </div>
+      <p class="pnote"><b>외형 시안 → 최종 모델</b> 귀여운 외형은 유지하고, 물방울을 움직이는 내부 구동 구조를 더했습니다</p>
+    </section>
+
+    <section class="isec">
+      <p class="ptag">최종 결과물</p>
       <h2>완성된 땀땀이</h2>
-      <div class="gal">
-        <img class="big" data-a="assets/img/final_front.webp" data-zoom alt="최종 3D 모델 정면">
-        <img data-a="assets/img/final_back.webp" data-zoom alt="뒷면">
-        <img data-a="assets/img/final_bottom.webp" data-zoom alt="서랍식 물받이">
-        <img data-a="assets/img/gloss_front.webp" data-zoom alt="광택 렌더">
-        <img data-a="assets/img/matte_eyes.webp" data-zoom alt="무광 렌더">
-        <img class="big" data-a="assets/img/final_cut.webp" data-zoom alt="내부 단면">
-        <img data-a="assets/img/gloss_top.webp" data-zoom alt="위에서 본 모습">
-        <img data-a="assets/img/matte_cut.webp" data-zoom alt="무광 단면">
-        <img data-a="assets/img/sticker_smile.webp" data-zoom alt="땀땀이 스티커">
-        <img data-a="assets/img/sticker_clover.webp" data-zoom alt="땀땀이 클로버 스티커">
+      <div class="pfinal">
+        <div class="phero">
+          <div class="phTxt"><h3>목마르면,<br><span>물방울이 쏙.</span></h3><p>흙이 마르면 물방울이<br>올라오고,<br>물은 내가 직접</p></div>
+          <img data-a="assets/img/poster/final.jpg" data-zoom alt="최종 땀땀이 화분">
+          <div class="pchips"><span>Ø160×H155 mm</span><span>모터 1개로 물방울·뚜껑 구동</span><span>3회 연속 건조 시 물방울 상승</span></div>
+        </div>
+        <div class="pside">
+          <div class="papp">
+            <p class="pappT">AI 앱 연계 UI/UX 시안</p>
+            <p class="pappS">화분과 앱의 캐릭터 ‘땀땀이’가 함께 물 줄 때를 알려줘요</p>
+            <div class="pappImgs">
+              <img class="main" data-a="assets/img/poster/app1.jpg" data-zoom alt="앱 메인 화면">
+              <img data-a="assets/img/poster/app2.jpg" data-zoom alt="앱 화면 2">
+              <img data-a="assets/img/poster/app3.jpg" data-zoom alt="앱 화면 3">
+            </div>
+          </div>
+          <div class="pslogan"><p>물 줄 때를<br>화분이<br>알려주고,</p><hr><b>돌봄은<br>내가 직접.</b><small>MooljoolDay</small></div>
+        </div>
       </div>
-      <div class="specs">
-        <div><b>Ø160 × H155</b><span>mm · 제품 크기(약)</span></div>
-        <div><b>모터 1개</b><span>물방울·뚜껑 동시 구동</span></div>
-        <div><b>6시간</b><span>마다 흙 수분 측정</span></div>
+      <div class="duo pstate">
+        <figure><img data-a="assets/img/poster/normal.jpg" data-zoom alt="수분이 충분할 때 물방울이 숨은 단면"><figcaption>수분 정상<small>물방울 숨김</small></figcaption></figure>
+        <figure><img data-a="assets/img/poster/dry.jpg" data-zoom alt="흙이 말라 물방울이 올라온 단면"><figcaption style="color:var(--blueD)">건조 감지<small>물방울이 쏙</small></figcaption></figure>
+        <figure><video data-a="assets/video/mechanism.mp4" muted loop autoplay playsinline></video><figcaption>작동 원리<small>공통 축 피니언으로 물방울·뚜껑 동시 구동</small></figcaption></figure>
       </div>
-      <div class="specs light" style="margin-top:14px">
-        <div><b>ESP32-C3 · Wi-Fi / BLE</b><span>제어보드</span></div>
-        <div><b>USB-C 5V</b><span>외부 전원</span></div>
-        <div><b>바질 · 들깨 · 초소형 토마토</b><span>키트 구성 씨앗 3종 중 선택</span></div>
-      </div>
+    </section>
+
+    <section class="isec">
+      <h2>전시 포스터</h2>
+      <p class="lede">2026 GTEC Design Engineering Fair에 낸 최종 포스터예요. 눌러서 크게 볼 수 있어요.</p>
+      <img class="pposter" data-a="assets/img/poster/poster.jpg" data-zoom alt="MooljoolDay 2026 GTEC 최종 포스터">
     </section>
 
     <section class="isec">
