@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>물줄때 마을 · 땀땀이와 씨앗 이야기</title>
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="gl"></canvas>
+
+<div id="loading"><div><div class="dropL"></div><p>마을을 빚는 중…</p></div></div>
+
+<!-- 타이틀 -->
+<section id="title">
+  <h1 class="logo">물줄때 마<span class="logoDrop"></span>을<small>땀땀이와 씨앗 이야기</small></h1>
+  <button class="btn orange" id="titleStart">이야기 시작하기</button>
+  <p class="credit">MooljoolDay · 경기과학기술대학교 디자인공학과 4CUS</p>
+</section>
+
+<!-- 이야기 -->
+<section id="story">
+  <div id="storyCard" class="clay">
+    <p id="storyText"></p>
+    <div id="storyFoot">
+      <div id="storyDots"></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="storySkip">건너뛰기</button>
+        <button class="btn orange sm" id="storyNext">다음</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 설정 -->
+<section id="setup">
+  <div class="panel clay">
+    <div id="setupProg"><i></i><i></i><i></i></div>
+    <div class="step" data-step="1">
+      <h2>네 이름은 뭐야?</h2>
+      <p class="lead">땀땀이와 요정들이 이 이름으로 불러 줄 거예요.</p>
+      <div class="nameWrap"><input id="nameInput" maxlength="8" placeholder="이름 쓰기" autocomplete="off"></div>
+      <p class="nameHelp">최대 8글자</p>
+      <div class="stepFoot"><button class="btn orange" id="nameNext">다음</button></div>
+    </div>
+    <div class="step" data-step="2">
+      <h2>함께 마을을 돌아다닐 요정을 골라요</h2>
+      <div id="charGrid"></div>
+      <div id="charPick"></div>
+      <div class="stepFoot"><button class="btn ghost" id="charBack">이전</button><button class="btn orange" id="charNext">다음</button></div>
+    </div>
+    <div class="step" data-step="3">
+      <h2>땀땀이에게 심을 씨앗을 골라요</h2>
+      <p class="lead">모두 집에서 화분에 키울 수 있는 식물이에요. ★가 적을수록 키우기 쉬워요.</p>
+      <div class="seedLayout"><div id="seedGrid"></div><div id="seedDetail"></div></div>
+      <div class="stepFoot"><button class="btn ghost" id="seedBack">이전</button><button class="btn" id="seedGo">씨앗 심으러 가기</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- 월드 라벨 -->
+<div id="labels">
+  <div id="prompt"><div class="pill"><kbd>E</kbd><span id="promptText"></span></div></div>
+  <div id="marker"><div class="mk"><span>!</span></div></div>
+  <div id="reqBubble"><div class="bub">
+    <div class="reqRow"><span class="reqLabel">물</span><span id="reqW"></span></div>
+    <div class="reqRow" id="reqNRow"><span class="reqLabel">양분</span><span id="reqN"></span></div>
+  </div></div>
+  <div id="ttamiTag">땀땀이</div>
+</div>
+
+<!-- HUD -->
+<section id="hud">
+  <div id="objective" class="clay"><span class="objIcon">🌱</span><span id="objText"></span></div>
+  <div id="inventory" class="clay">
+    <span class="bagIcon">👜</span>
+    <span class="slot" data-k="apple" title="사과">🍎<b>0</b></span>
+    <span class="slot" data-k="bucket" title="양동이"><svg viewBox="0 0 32 32" width="32" height="32"><path d="M6 12h20l-2.6 14.6a2.2 2.2 0 0 1-2.2 1.9H10.8a2.2 2.2 0 0 1-2.2-1.9z" fill="#E5322E"/><ellipse cx="16" cy="12" rx="10" ry="3.2" fill="#7CCDF2" stroke="#C2281F" stroke-width="1.6"/><path d="M6.4 12C7 2.5 25 2.5 25.6 12" fill="none" stroke="#8A8A92" stroke-width="2.2" stroke-linecap="round"/></svg></span>
+    <span class="slot" data-k="water" title="물">💧<b>0</b></span>
+    <span class="slot" data-k="ladder" title="사다리"><svg viewBox="0 0 32 32" width="32" height="32"><g fill="none" stroke-linecap="round"><path d="M10 3v26M22 3v26" stroke="#B5763A" stroke-width="3.4"/><path d="M10 8h12M10 14h12M10 20h12M10 26h12" stroke="#DDA661" stroke-width="3"/></g></svg></span>
+    <span class="slot" data-k="crystal" title="반짝이">💎<b>0</b></span>
+    <span class="slot" data-k="nutrient" title="햇빛 담은 반짝이 (양분)">☀️<b>0</b></span>
+  </div>
+  <div id="joy"><span class="hint">끌어서 이동</span><div id="joyKnob"></div></div>
+  <div id="keysHint"><kbd>W A S D</kbd> 또는 <kbd>방향키</kbd> 이동<br><kbd>E</kbd> <kbd>스페이스</kbd> 행동 · <kbd>Shift</kbd> 달리기</div>
+  <button id="actBtn" aria-label="행동하기"><span class="k">✋</span><span id="actLabel">살펴보기</span></button>
+</section>
+<div id="topBtns">
+  <button class="round" id="btnSound" title="효과음 켜기/끄기" aria-label="효과음">🔊</button>
+  <button class="round" id="btnMusic" title="배경음악 켜기/끄기" aria-label="배경음악">🎵</button>
+  <button class="round" id="btnHelp" title="조작법" aria-label="조작법">❔</button>
+  <button class="round" id="btnHome" title="처음으로" aria-label="처음으로">🏠</button>
+</div>
+
+<!-- 대화 -->
+<div id="dialog">
+  <div id="dlgChoices"></div>
+  <div id="dlgBox" class="clay"><span id="dlgName"></span><p id="dlgText"></p><span id="dlgNext">▼</span></div>
+</div>
+<div id="toast"><div class="t" id="toastText"></div></div>
+
+<!-- 도움말 -->
+<section id="help">
+  <div class="clay">
+    <h3>이렇게 놀아요</h3>
+    <div class="helpGrid">
+      <kbd>WASD · 방향키</kbd><span>마을을 걸어 다녀요 (Shift는 달리기)</span>
+      <kbd>E · 스페이스</kbd><span>말 걸기, 흔들기, 물 뜨기, 돌멩이 던지기, 사다리 오르기</span>
+      <kbd>🕹️ · ✋</kbd><span>터치 화면에서는 왼쪽 조이스틱과 오른쪽 버튼</span>
+      <kbd>! 표시</kbd><span>다음에 가 볼 곳이에요</span>
+    </div>
+    <button class="btn orange" id="helpClose">알겠어요!</button>
+  </div>
+</section>
+
+<!-- 완성 -->
+<section id="complete">
+  <div class="card clay">
+    <div class="cpHead"><span id="cpEmoji"></span><div><h2 id="cpTitle"></h2><p id="cpSub"></p></div></div>
+    <div class="cpKey">
+      <div><h4>💧 물 주는 주기</h4><p id="cpWater"></p><p id="cpWaterD"></p></div>
+      <div><h4>🏠 집에서 키우기 난이도</h4><div id="cpLevel"></div></div>
+    </div>
+    <div class="cpTxt"><h4>처음 심었던 씨앗</h4><p id="cpSeed"></p></div>
+    <div class="cpTxt"><h4>다 자라면</h4><p id="cpPlant"></p></div>
+    <div id="cpMeta"></div>
+    <p class="cpTip" id="cpTip"></p>
+    <div class="cpBtns">
+      <button class="btn orange" id="cpLearn">땀땀이 알아보기</button>
+      <button class="btn" id="cpReplay">다른 씨앗 심기</button>
+    </div>
+  </div>
+</section>
+
+<!-- 영상 -->
+<section id="videoOverlay">
+  <video id="video" playsinline preload="auto"></video>
+  <p id="videoCap"></p>
+  <button class="btn ghost sm" id="videoSkip">건너뛰기 ⏭</button>
+</section>
+
+<!-- 땀땀이 알아보기 -->
+<section id="info" aria-label="땀땀이 알아보기">
+  <button class="round" id="infoClose" title="닫고 다른 씨앗 심기" aria-label="닫기">✕</button>
+  <div class="iwrap">
+    <header class="ihero">
+      <div>
+        <h1>목마르면,<br>물방울이 <span class="d">쏙.</span></h1>
+        <p class="sub">게임 속 땀땀이는 진짜 화분이에요. 흙이 마르면 물방울이 올라와 알려 주고, 물은 내가 직접 줘요. 물 줄 때를 알려 주는 반려식물 키트, MooljoolDay(물줄때)예요.</p>
+        <p class="who"><b>MooljoolDay (물줄때)</b> · 2026 GTEC Design Engineering Fair<br>경기과학기술대학교 디자인공학과 4CUS · 최혜지 김채현 마상서 유재인</p>
+      </div>
+      <div class="mvBox">
+        <canvas id="mvCanvas"></canvas>
+        <span id="mvState">흙이 말랐어요 · 물방울이 쏙</span>
+        <p class="mvHint">끌어서 돌려 보세요 · 실제 설계 데이터(CAD)로 만든 3D 모델</p>
+        <div class="mvCtl">
+          <button data-mv="drop" class="on">💧 물방울</button>
+          <button data-mv="tray">🪣 물받이통</button>
+          <button data-mv="cut">속 보기</button>
+          <button data-mv="front">정면</button>
+          <button data-mv="top">위에서</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="isec why">
+      <div>
+        <h2>돌보고 싶은 마음은 있는데,<br>언제 물을 줘야 할지 몰라요</h2>
+        <p class="lede">관리 경험이 부족하면 흙의 수분 상태와 물 줄 시점을 판단하기 어려워요. 그렇다고 자동급수 화분은 사람 대신 물을 줘 버려서, 직접 돌보며 성장을 지켜보는 즐거움이 줄어들지요.</p>
+        <div class="stat">
+          <div><b>36.1%</b><span>전체 가구 중 1인 가구<br>(2024년 기준)</span></div>
+          <div><b>55%</b><span>반려식물을 키우는 이유<br>‘정서적 교감·안정’</span></div>
+        </div>
+        <p class="src">출처: 국가데이터처 「2025 통계로 보는 1인가구」 · 농촌진흥청 소비자 조사(2022, 874명)</p>
+      </div>
+      <div>
+        <p style="color:#C9663A;padding:0 0 12px 4px;font-size:16px;font-weight:800">그래서 세운 목표</p>
+        <ol class="goals">
+          <li>흙이 마르면 물방울이 올라오는 직관적인 알림</li>
+          <li>물은 사용자가 직접 — 돌보는 즐거움은 그대로</li>
+          <li>두 눈과 물방울로 표정을 짓는 감성적인 캐릭터 디자인</li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="isec">
+      <h2>물방울 하나로 말해요</h2>
+      <p class="lede">평소엔 물방울이 쏙 숨어 있다가, 흙이 마르면 위로 올라와요. 모터 하나와 랙·피니언 기어로 물방울과 양쪽 뚜껑을 함께 움직여요.</p>
+      <div class="duo">
+        <figure><img data-a="assets/img/func_normal.webp" data-zoom alt="수분이 충분할 때 물방울이 숨어 있는 단면"><figcaption>수분 정상<small>물방울이 숨어 있어요</small></figcaption></figure>
+        <figure><img data-a="assets/img/func_dry.webp" data-zoom alt="흙이 말라 물방울이 올라온 단면"><figcaption>건조 감지<small>물방울이 쏙 올라와요</small></figcaption></figure>
+        <figure><video data-a="assets/video/mechanism.mp4" muted loop autoplay playsinline></video><figcaption>작동 원리<small>공통 축 피니언으로 물방울·뚜껑 동시 구동</small></figcaption></figure>
+      </div>
+      <ol class="flow">
+        <li><b>평상시</b><span>6시간마다 흙 수분 측정</span></li>
+        <li><b>건조 확인</b><span>3회 연속 건조일 때만</span></li>
+        <li class="hot"><b>물방울 상승</b><span>모터 정회전 · 뚜껑 열림</span></li>
+        <li class="hot"><b>직접 물 주기</b><span>신호를 보고 내가 직접</span></li>
+        <li><b>회복 확인</b><span>2회 연속 수분 회복</span></li>
+        <li><b>물방울 하강</b><span>모터 역회전 · 뚜껑 닫힘</span></li>
+      </ol>
+    </section>
+
+    <section class="isec">
+      <h2>흙과 전자부를 나눈 속 구조</h2>
+      <div class="inside">
+        <img data-a="assets/img/cutaway.webp" data-zoom alt="땀땀이 내부 단면도">
+        <ol class="parts">
+          <li><div><b>정전용량식 토양수분센서</b><span>흙 속 수분 상태를 측정</span></div></li>
+          <li><div><b>ESP32-C3 제어보드</b><span>센서값 처리 및 모터 제어 · Wi-Fi/BLE</span></div></li>
+          <li><div><b>서보모터</b><span>구동 기어에 회전력 전달</span></div></li>
+          <li><div><b>랙 · 피니언 기어</b><span>회전운동을 직선운동으로 변환</span></div></li>
+          <li><div><b>물방울 표시기</b><span>흙의 건조 상태를 움직임으로 표현</span></div></li>
+          <li><div><b>서랍식 물받이</b><span>빠진 물을 모아 분리·세척</span></div></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="isec">
+      <h2>이렇게 만들었어요</h2>
+      <ol class="make">
+        <li><img data-a="assets/img/matte_white.webp" data-zoom alt="초기 외형"><b>문제 분석·기획</b><span>기존 제품을 조사하고 물방울로 알리는 콘셉트 선정</span></li>
+        <li><img data-a="assets/img/cad_cut.webp" data-zoom alt="내부 설계 CAD"><b>3D 모델링·내부 설계</b><span>Inventor로 식재부·배수부·전자부 공간 설계</span></li>
+        <li><img data-a="assets/img/cad_drop.webp" data-zoom alt="물방울 구동부"><b>랙·피니언 구동</b><span>모터 회전을 직선 운동으로 바꿔 물방울 승강</span></li>
+        <li><img data-a="assets/img/proto.webp" data-zoom alt="3D 프린팅 시제품"><b>3D 프린팅 시제품</b><span>외형을 출력해 크기·비율과 부품 배치 검토</span></li>
+        <li><img data-a="assets/slides/s-12.jpg" data-zoom alt="앱 연계 화면"><b>AI·앱 연계</b><span>식물 인식·성장 기록 기능과 앱 UI/UX 시안</span></li>
+      </ol>
+    </section>
+
+    <section class="isec">
+      <h2>완성된 땀땀이</h2>
+      <div class="gal">
+        <img class="big" data-a="assets/img/final_front.webp" data-zoom alt="최종 3D 모델 정면">
+        <img data-a="assets/img/final_back.webp" data-zoom alt="뒷면">
+        <img data-a="assets/img/final_bottom.webp" data-zoom alt="서랍식 물받이">
+        <img data-a="assets/img/gloss_front.webp" data-zoom alt="광택 렌더">
+        <img data-a="assets/img/matte_eyes.webp" data-zoom alt="무광 렌더">
+        <img class="big" data-a="assets/img/final_cut.webp" data-zoom alt="내부 단면">
+        <img data-a="assets/img/gloss_top.webp" data-zoom alt="위에서 본 모습">
+        <img data-a="assets/img/matte_cut.webp" data-zoom alt="무광 단면">
+        <img data-a="assets/img/sticker_smile.webp" data-zoom alt="땀땀이 스티커">
+        <img data-a="assets/img/sticker_clover.webp" data-zoom alt="땀땀이 클로버 스티커">
+      </div>
+      <div class="specs">
+        <div><b>Ø160 × H155</b><span>mm · 제품 크기(약)</span></div>
+        <div><b>모터 1개</b><span>물방울·뚜껑 동시 구동</span></div>
+        <div><b>6시간</b><span>마다 흙 수분 측정</span></div>
+      </div>
+      <div class="specs light" style="margin-top:14px">
+        <div><b>ESP32-C3 · Wi-Fi / BLE</b><span>제어보드</span></div>
+        <div><b>USB-C 5V</b><span>외부 전원</span></div>
+        <div><b>바질 · 들깨 · 초소형 토마토</b><span>키트 구성 씨앗 3종 중 선택</span></div>
+      </div>
+    </section>
+
+    <section class="isec">
+      <h2>광고 영상</h2>
+      <div class="adv"><video data-a="assets/video/ad.mp4" controls playsinline preload="metadata"></video></div>
+    </section>
+
+    <section class="isec">
+      <h2>발표 자료</h2>
+      <p class="lede">2026 경기앵커 GAIA-Festa 창업아이디어 경진대회 발표 자료예요.</p>
+      <div class="slides"><div id="slideStrip"></div></div>
+      <div class="slideNav"><button id="slidePrev" aria-label="이전 쪽">‹</button><span id="slideNum"></span><button id="slideNext" aria-label="다음 쪽">›</button></div>
+    </section>
+
+    <section class="isec">
+      <div class="bannerRow">
+        <img data-a="assets/img/banner.webp" data-zoom alt="2026 GTEC Design Engineering Fair A1 배너">
+        <div>
+          <h2>2026 GTEC<br>Design Engineering Fair</h2>
+          <p class="lede">전시장에 걸린 A1 배너예요. 눌러서 크게 볼 수 있어요.</p>
+          <div class="team">
+            <div><b>최혜지</b><em>팀장 · 기획·설계 총괄</em><span>제품 구상, 설계·모델링 총괄</span></div>
+            <div><b>김채현</b><em>디자인·사업화 · 발표</em><span>모델링, 사업화, 앱 UX/UI</span></div>
+            <div><b>마상서</b><em>기획·설계</em><span>제품 기획, 구조 설계, 발표 자료</span></div>
+            <div><b>유재인</b><em>구동 구현 · 관리</em><span>물방울 구동 구현, 진행·수정 관리</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <footer class="ifoot">지도교수 최인대 · 권효찬<br>경기과학기술대학교 디자인공학과 · 앵커 사업단</footer>
+  </div>
+  <div class="ibar">
+    <button class="btn blue" id="infoApp">📱 물줄때 앱 알아보기</button>
+    <button class="btn" id="infoReplay">🌱 다른 씨앗 심기</button>
+  </div>
+</section>
+
+<!-- 앱 -->
+<section id="appView">
+  <div id="appBar">
+    <button class="btn ghost sm" id="appBack">← 땀땀이 알아보기</button>
+    <b>물줄때 앱</b>
+    <span style="display:flex;gap:8px"><button class="btn ghost sm" id="appLandingBack">앱 열기 화면</button><button class="btn sm" id="appReplay">🌱 다른 씨앗 심기</button></span>
+  </div>
+  <div id="appLanding">
+    <div class="clay appCard">
+      <img data-a="assets/img/sticker_clover.webp" alt="">
+      <h2>물줄때 앱</h2>
+      <p id="appMsg">아래 버튼을 누르면 새 창에서 앱이 열려요.</p>
+      <button class="btn blue" id="appOpen">📱 물줄때 앱 열기</button>
+      <button id="appOffline">인터넷이 안 될 땐 · 저장해 둔 앱 화면 시안 보기</button>
+      <p id="appUrl"></p>
+    </div>
+  </div>
+  <iframe id="appFrame" title="물줄때 앱"></iframe>
+</section>
+<div id="lightbox"><img id="lbImg" alt=""></div>
+
+<script src="lib/three/three.min.js"></script>
+<script src="lib/three/GLTFLoader.js"></script>
+<script src="lib/three/OrbitControls.js"></script>
+<script src="lib/three/BufferGeometryUtils.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/data.js"></script>
+<script src="js/models.js"></script>
+<script src="js/world.js"></script>
+<script src="js/game.js"></script>
+<script src="js/info.js"></script>
+</body>
+</html>
