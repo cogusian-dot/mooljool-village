@@ -17,8 +17,8 @@
   - 보안 규칙: `firebase/database.rules.json` (새 글 추가만 허용, 수정·삭제 불가, 필드 검증)
 - `GUESTBOOK.dbUrl`(js/data.js)이 비어 있으면 체험 모드: localStorage + BroadcastChannel (같은 브라우저의 탭끼리만)
 - 수확물: `HARVEST`(js/data.js) 문구 + `buildPlant(seed, 3)`을 별도 WebGLRenderer로 찍은 썸네일(캐시)
-- 진입점: 타이틀 `#titleBoard`, 완성 창 `#cpBrag`, 마을 광장 3D 게시판(12, 0, -4.5) → interactables의 'board'
-- 마을 3D 게시판은 CanvasTexture에 최근 8개 글을 그림
+- 진입점: 타이틀 `#titleBoard`, 완성 창 `#cpBrag`
+- 마을 광장 3D 게시판(`GB.build3D()`, (12, 0, -4.5), CanvasTexture에 최근 8개 글)은 코드만 남기고 호출하지 않음 — 게임 중엔 게시판이 안 보이게 해 달라는 요청(2026-11-21). 다시 켜려면 game.js의 `GB.init();` 뒤에 `GB.build3D();`
 - 비속어는 표시할 때 모든 글에 `GB.clean()` 적용. 도배 방지는 클라이언트 쿨다운뿐이라 서버 쪽 속도 제한은 없음
 - 테스트: `tests/mock_rtdb.py <port>` (RTDB REST 흉내 서버)로 여러 브라우저 동시 접속 확인 가능
 
@@ -36,7 +36,7 @@
 - NPC 자랑 대화의 세 번째 선택지는 공감 안 해 주는 말 → `n.sad` 동안 웅크리고 눈물(`burst('tear')`). 다시 말 걸어 칭찬하면 풀림
 - 완성 시 `n.celebrate` 위치(땀땀이 둘레 반지름 5, 카메라 쪽은 비움)로 모든 NPC가 모여 축하
 - 양동이는 얻은 뒤 머리에 이고 다님(`updateHeadBucket`), 물이 있으면 물 표시. 반짝이는 0.55초 뒤 바로 가방으로(따라다니지 않음)
-- 목수 화분은 작업대 옆 (-14.3, 9.3). `#btnPlaza` → `goPlaza()`가 방명록 게시판 앞으로 이동
+- 목수 화분은 작업대 옆 (-14.3, 9.3). `#btnPlaza` → `goPlaza()`가 광장(8.6, 0, -3.2)으로 이동
 
 ## 결정 사항
 - Three.js는 r147 그대로 둠. r187로 올리면 조명 세기(π 배율·decay), colorSpace, mergeGeometries, PCFSoftShadowMap 제거 때문에
