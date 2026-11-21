@@ -50,6 +50,7 @@ function burst(kind, pos, n = 12, o = {}) {
     if (kind === 'sparkle') { geo = PART_GEO.oct; mat = M(['#FFF6A8', '#FFFFFF', '#FFE06B', '#BFF3FF'][i % 4], { em: '#FFF2A0', ei: 0.9, nobump: true }); s = 0.09 + Math.random() * 0.08; grav = -2; vel.multiplyScalar(0.7); life = 1.1; spin = 6; }
     if (kind === 'leaf') { mat = M(['#5DB34F', '#7CCB5E', '#4FA548'][i % 3]); s = 0.12; grav = -3; vel.set((Math.random() - .5) * 3, Math.random() * 1.5, (Math.random() - .5) * 3); life = 1.8; spin = 4; }
     if (kind === 'splash') { mat = M('#7CCDF2', { r: 0.2, nobump: true, rim: 0.3 }); s = 0.08 + Math.random() * 0.08; vel.set((Math.random() - .5) * 3, 3 + Math.random() * 3, (Math.random() - .5) * 3); life = 0.9; grav = -14; }
+    if (kind === 'tear') { mat = M('#6CC4F5', { r: 0.2, nobump: true, rim: 0.3 }); s = 0.055; vel.set((Math.random() - .5) * 0.5, 0.5, (Math.random() - .5) * 0.5); grav = -6; life = 0.7; }
     if (kind === 'puff') { mat = M('#FFFFFF', { nobump: true, rim: 0 }); s = 0.25; vel.set((Math.random() - .5) * 2, 0.6 + Math.random(), (Math.random() - .5) * 2); grav = 0; life = 0.6; }
     if (kind === 'rock') { mat = M('#B9B3AA'); s = 0.12 + Math.random() * 0.1; grav = -16; life = 0.8; }
     if (kind === 'confetti') { geo = PART_GEO.box; mat = M(['#FF6B8B', '#FFD23A', '#6BC4F0', '#7CC46E', '#B98CFF', '#FF9E5E'][i % 6], { nobump: true }); s = 0.14; vel.set((Math.random() - .5) * 7, 6 + Math.random() * 6, (Math.random() - .5) * 7); grav = -7; life = 2.6; spin = 8; }
@@ -95,6 +96,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initRenderer($('#gl'));
   loadTtamiModel(() => {
     buildWorld();
+    MP.init(); GB.init(); GB.build3D();
     G.ttami = makeTtami(TTAMI_SCALE); W.scene.add(G.ttami);
     W.colliders.push({ x: 0, z: 0, r: 2.25 });
     G.floatDrop = makeFloatDrop(); W.scene.add(G.floatDrop);
@@ -134,8 +136,10 @@ function update(dt) {
     G.player.rotation.y += dy * Math.min(1, dt * 12);
     animateCharacter(G.player, t, G.speed, { hop: G.playerHop || 0, squash: G.playerSquash || 0, hold: G.sunHold });
     updateToolSwing(dt);
+    updateHeadBucket(t);
   }
   updateNPCs(dt, t);
+  MP.update(dt, t);
   updateFloatDrop(dt, t);
   updatePickups(dt);
   updateParticles(dt);
@@ -180,6 +184,11 @@ function spawnPlayer() {
   const hand = G.player.userData.hands[1];
   G.tools = { bucket: makeBucketMesh() };
   for (const k of ['bucket']) { const m = G.tools[k]; m.visible = false; G.player.userData.body.add(m); }
+  // 양동이는 머리 위에 이고 다녀요 (물이 있으면 물이 찰랑)
+  const bw = add(G.tools.bucket, cyl(0.25, 0.25, 0.03, 18), M('#7CCDF2', { r: 0.2, nobump: true, em: '#2F8FD0', ei: 0.25 }), 0, 0.39, 0, false);
+  bw.visible = false; G.tools.bucket.userData.water = bw;
+  const tb = new THREE.Box3().setFromObject(G.player.userData.top);
+  G.headY = Math.min(1.3, Math.max(1.0, isFinite(tb.max.y) ? tb.max.y - 0.04 : 1.0));
 }
 function movePlayer(dt) {
   let x = 0, z = 0;
@@ -226,6 +235,20 @@ function updateToolSwing(dt) {
   m.scale.setScalar(1);
   if (G.swing <= 0) { m.visible = false; G.swingTool = null; }
 }
+function updateHeadBucket(t) {
+  const b = G.tools && G.tools.bucket; if (!b || G.swingTool === 'bucket') return;
+  const has = !!G.flags.bucket && ['play', 'cutscene', 'complete'].includes(G.mode);
+  b.visible = has; if (!has) return;
+  const full = G.inv.water > 0, walk = Math.min(1, G.speed / 5);
+  b.position.set(0, (G.headY || 1.0) + Math.abs(Math.sin(t * 12)) * 0.03 * walk, 0);
+  b.rotation.set(Math.sin(t * 6) * 0.05 * walk, 0, Math.sin(t * 12) * 0.06 * walk);
+  b.scale.setScalar(1.15);
+  b.userData.water.visible = full;
+  if (!G.sunHold) { // 두 손으로 양동이를 받쳐요
+    const u = G.player.userData, hy = Math.min((G.headY || 1.0) + 0.12, 1.25);
+    u.hands[0].position.set(-0.4, hy, 0.02); u.hands[1].position.set(0.4, hy, 0.02);
+  }
+}
 
 // ═════════ NPC ═════════
 const NPC_SPOTS = [[-8.5, -2], [9, -1.5], [-7.5, -14.5], [8.5, -15.5], [-23, 3.5], [23.5, 3], [-4.5, 15], [4.8, 19.5]];
@@ -240,7 +263,7 @@ function buildNPCs() {
   others.sort(() => R() - 0.5);
   const list = [
     { def: mush, role: 'mushroom', home: V3(12.6, 0, -7.6) },
-    { def: carp, role: 'carpenter', home: V3(-12.2, 0, 11.2) },
+    { def: carp, role: 'carpenter', home: V3(-12.2, 0, 11.2), pot: V3(-14.3, 0, 9.3) },  // 화분은 작업대 옆 (사다리 만드는 모습을 가리지 않게)
     ...NPC_SPOTS.map((s, i) => ({ def: others[i], role: 'brag', home: V3(s[0], 0, s[1]) })),
   ];
   for (const it of list) {
@@ -250,7 +273,7 @@ function buildNPCs() {
     W.scene.add(root);
     const pot = makeTtami(MINI_SCALE);
     const side = it.home.x > 0 ? -1 : 1;
-    pot.position.set(it.home.x + 1.5 * side, 0, it.home.z - 0.6);
+    if (it.pot) pot.position.copy(it.pot); else pot.position.set(it.home.x + 1.5 * side, 0, it.home.z - 0.6);
     pot.rotation.y = Math.atan2(-pot.position.x * 0.1, 1);
     setTtamiPlant(pot, it.def.seed, 3, PLANT_SCALE_MINI);
     W.scene.add(pot);
@@ -262,7 +285,19 @@ function updateNPCs(dt, t) {
     const p = n.root.position;
     const dPlayer = G.player ? Math.hypot(G.pos.x - p.x, G.pos.z - p.z) : 99;
     let speed = 0;
-    if (n.working) {
+    if (n.celebrate) { // 식물이 다 자라면 땀땀이 둘레에 동그랗게 모여 축하해요
+      const dx = n.celebrate.x - p.x, dz = n.celebrate.z - p.z, d = Math.hypot(dx, dz);
+      if (d > 0.2) { speed = Math.min(9, 3 + d * 1.6); const st = Math.min(d, speed * dt); p.x += dx / d * st; p.z += dz / d * st; n.facing = Math.atan2(dx, dz); }
+      else {
+        n.facing = Math.atan2(-p.x, -p.z); n.wave = 0.5;
+        n.cheer = (n.cheer || 0) - dt;
+        if (n.cheer <= 0) { n.cheer = 0.9 + Math.random() * 0.8; n.hop = 0.45; if (Math.random() < 0.35) burst('confetti', V3(p.x, 2.4, p.z), 5); }
+      }
+    } else if (n.sad > 0) {
+      n.sad -= dt; n.facing = Math.atan2(G.pos.x - p.x, G.pos.z - p.z);
+      n.tear = (n.tear || 0) - dt;
+      if (n.tear <= 0) { n.tear = 0.22; const s = Math.sin(n.root.rotation.y), c = Math.cos(n.root.rotation.y); for (const e of [-0.19, 0.19]) burst('tear', V3(p.x + c * e + s * 0.44, 0.66, p.z - s * e + c * 0.44), 1); if (Math.random() < 0.3) SFX.play('blip', 0.6); }
+    } else if (n.working) {
       n.facing = Math.atan2(-11 - p.x, 8.6 - p.z);
     } else if (n.talking || dPlayer < 3.5) {
       n.facing = Math.atan2(G.pos.x - p.x, G.pos.z - p.z);
@@ -281,7 +316,10 @@ function updateNPCs(dt, t) {
     n.hop = Math.max(0, n.hop - dt);
     const hopY = n.hop > 0 ? Math.abs(Math.sin(n.hop * 14)) * 0.45 : 0;
     n.wave = Math.max(0, n.wave - dt);
-    animateCharacter(n.root, t + n.home.x, speed, { hop: hopY, wave: n.wave > 0 || (dPlayer < 3.5 && dPlayer > 2.2 && !n.talking) });
+    const sadNow = n.sad > 0 && !n.celebrate;
+    animateCharacter(n.root, t + n.home.x, speed, { hop: hopY, squash: sadNow ? 0.13 + Math.abs(Math.sin(t * 9)) * 0.03 : 0, wave: !sadNow && (n.wave > 0 || (dPlayer < 3.5 && dPlayer > 2.2 && !n.talking)) });
+    n.root.userData.body.rotation.x = sadNow ? 0.22 : n.root.userData.body.rotation.x;
+    if (sadNow) { const u = n.root.userData; u.hands[0].position.set(-0.24, 0.7, 0.42); u.hands[1].position.set(0.24, 0.7, 0.42); }
   }
 }
 
@@ -313,9 +351,8 @@ function updatePickups(dt) {
     }
     if (!G.player || G.mode !== 'play') continue;
     const d = Math.hypot(G.pos.x - m.position.x, G.pos.z - m.position.z);
-    if (p.magnet && p.age > 0.7) {
-      const to = V3(G.pos.x, 1, G.pos.z); m.position.lerp(to, Math.min(1, dt * 8)); p.rest = true;
-      if (m.position.distanceTo(to) < 0.4) collectPickup(p, i);
+    if (p.magnet) { // 반짝이는 튀어나오자마자 가방 속으로 (플레이어를 따라다니지 않아요)
+      if (p.age > 0.55) collectPickup(p, i);
       continue;
     }
     if (p.age > 0.45 && d < 1.25) {
@@ -431,7 +468,9 @@ async function scoopWater() {
 }
 
 // ═════════ 땀땀이 요청 ═════════
-function currentReq() { const s = SEED_BY_ID[G.seedId]; const r = s.req[G.reqIdx]; return { w: r[0], n: r[1] }; }
+// 성장은 2단계: 씨앗 → 새싹 → 완성 (GROW_STAGES에 적힌 모습 순서대로 자라요)
+const GROW_STAGES = [1, 3];
+function currentReq() { const s = SEED_BY_ID[G.seedId]; const r = s.req[Math.min(G.reqIdx, s.req.length - 1)]; return { w: r[0], n: r[1] }; }
 async function raiseRequest() {
   const tt = G.ttami;
   setTtamiDrop(tt, 1); SFX.play('rise');
@@ -482,7 +521,7 @@ async function completeStage() {
   burst('splash', dropWorld, 10);
   await wait(500);
   // 성장!
-  G.stage++; G.reqIdx++;
+  G.reqIdx++; G.stage = GROW_STAGES[Math.min(G.reqIdx, GROW_STAGES.length) - 1];
   const p = setTtamiPlant(tt, G.seedId, G.stage, PLANT_SCALE_BIG);
   SFX.play('grow');
   const anchorW = new THREE.Vector3(); tt.userData.anchor.getWorldPosition(anchorW);
@@ -493,7 +532,7 @@ async function completeStage() {
   if (G.stage >= 3) { await finishPlant(); return; }
   const msg = G.stage === 1 ? '싹이 텄어요! 🌱' : '쑥쑥 자랐어요! 🌿';
   toast(msg, 'grow');
-  await say('ttami', G.stage === 1 ? `우와;; 싹이 났어;;! 고마워 ${callName(G.name)};;` : `잎이 많아졌지;;? 조금만 더 도와줘;;`);
+  await say('ttami', G.stage === 1 ? `우와;; 싹이 났어;;! 고마워 ${callName(G.name)};; 한 번만 더 도와주면 다 자랄 것 같아;;` : `잎이 많아졌지;;? 조금만 더 도와줘;;`);
   camFollow();
   await wait(900);
   toast('땀땀이가 또 물방울을 올려 보냈어요!');
@@ -506,10 +545,11 @@ async function finishPlant() {
   const anchorW = new THREE.Vector3(); G.ttami.userData.anchor.getWorldPosition(anchorW);
   burst('confetti', anchorW.clone().add(V3(0, 3, 0)), 60);
   burst('sparkle', anchorW.clone().add(V3(0, 2, 0)), 30);
-  for (const n of G.npcs) { n.hop = 1.2; }
+  // 모든 요정이 땀땀이 앞에 동그랗게 모여요
+  G.npcs.forEach((n, i) => { const a = Math.PI * 0.5 + (i - (G.npcs.length - 1) / 2) * (Math.PI * 1.5 / Math.max(1, G.npcs.length - 1)); n.sad = 0; n.working = false; n.celebrate = V3(Math.cos(a) * 5.0, 0, Math.sin(a) * 5.0); });
   G.completed.add(G.seedId);
-  camTo(V3(3.5, 6.5, 14), V3(2.8, 3.6, 0), 1.6);
-  await wait(800);
+  camTo(V3(3.5, 8.5, 17), V3(2.8, 2.6, 0), 1.6);
+  await wait(2600);
   await say('ttami', `해냈다;;! ${plantShort(seed)} 완성이야;;! ${callName(G.name)}, 정말 고마워;;;`);
   showComplete();
 }
@@ -539,6 +579,8 @@ function interactables() {
   const h = W.refs.hill;
   list.push({ id: 'hill', pos: h.base, r: 2.8, h: 3.0, label: G.flags.ladderPlaced ? '올라가기' : G.flags.ladder ? '사다리 놓기' : '살펴보기', act: actHill });
   for (const n of G.npcs) list.push({ id: 'npc', pos: n.root.position, r: 2.4, h: 1.9, label: '말 걸기', act: () => talkNPC(n) });
+  for (const it of MP.interactables()) list.push(it);
+  if (GB.board3D) list.push({ id: 'board', pos: GB.board3D.front, r: 3.2, h: 6.4, label: '방명록 보기', act: () => GB.open({ fromVillage: true }) });
   return list;
 }
 function nearestInteractable() {
@@ -702,15 +744,27 @@ async function bragTalk(n) {
   if (!n.met) {
     await say(n, `안녕 ${callName(G.name)}! 난 ${J(nm, '이야', '야')}. ${n.def.line}`);
   } else {
-    await say(n, `또 왔구나, ${callName(G.name)}!`);
+    await say(n, n.sad > 0 ? `훌쩍… ${callName(G.name)}, 또 왔어…?` : `또 왔구나, ${callName(G.name)}!`);
   }
   n.met = true;
   // 화분 보여주기
   const pp = n.pot.position;
   camTo(V3(pp.x + (G.pos.x - pp.x) * 0.3 + 1.5, 4.2, pp.z + 6), V3(pp.x, 1.4, pp.z), 3);
   await say(n, `이것 좀 봐! 내 땀땀이가 키운 ${J(plantShort(seed), '이야', '야')}. ${seed.brag}`);
-  const opts = n.praised ? ['역시 최고야!', seed.praise, '비결이 뭐야?'] : ['우와, 정말 잘 키웠다!', seed.praise, '나도 이렇게 키우고 싶어!'];
-  await choose(n, opts);
+  const opts = n.praised ? ['역시 최고야!', seed.praise, '또 그 얘기야? 지겨운데…'] : ['우와, 정말 잘 키웠다!', seed.praise, '음… 별로 안 대단한데?'];
+  const pick = await choose(n, opts);
+  if (pick === 2) { // 공감해 주지 않으면 시무룩해져서 울어요
+    n.sad = 5.5; n.hop = 0; SFX.play('deny');
+    { // 옆에서 얼굴이 보이게
+      const np = n.root.position, dx = G.pos.x - np.x, dz = G.pos.z - np.z, dl = Math.hypot(dx, dz) || 1, s = dx / dl >= 0 ? -1 : 1;
+      camTo(V3(np.x + dx / dl * 1.0 + dz / dl * s * 5.2, 2.6, np.z + dz / dl * 1.0 - dx / dl * s * 5.2), V3(np.x + dx / dl * 0.8, 0.9, np.z + dz / dl * 0.8), 3);
+    }
+    await say(n, '…힝. 열심히 키웠는데… 너무해… 훌쩍훌쩍…');
+    toast(`${J(nm, '이', '가')} 시무룩해졌어요. 다시 말을 걸어 달래 줄까요?`);
+    camFollow();
+    return;
+  }
+  n.sad = 0;
   n.hop = 0.9; SFX.play('happy');
   burst('heart', n.root.position.clone().add(V3(0, 1.8, 0)), 6);
   hearts(n.root.position);
@@ -1190,6 +1244,17 @@ function goHome() {
   location.reload();
 }
 
+// 광장으로 한 번에 가기 (방명록 게시판과 다른 접속자들이 있는 곳)
+function goPlaza() {
+  if (G.mode !== 'play' || G.busy || G.onHill) { SFX.play('deny'); if (G.mode === 'play') toast('지금은 광장으로 갈 수 없어요'); return; }
+  SFX.play('whoosh'); burst('puff', V3(G.pos.x, 1, G.pos.z), 8);
+  G.pos.set(8.6, 0, -3.2); G.posY = 0; G.speed = 0; G.yaw = Math.atan2(12 - 8.6, -4.5 + 3.2);
+  G.cam.pos.set(G.pos.x - 3, 9, G.pos.z + 13);
+  burst('puff', V3(G.pos.x, 1, G.pos.z), 8);
+  G.playerHop = 0; tween(0.5, k => { G.playerHop = Math.sin(k * Math.PI) * 0.5; });
+  toast('광장에 왔어요! 방명록 게시판이 바로 앞에 있어요'); refreshObjective();
+}
+
 // ═════════ 도움말 ═════════
 function showHelp(first) { $('#help').classList.add('show'); $('#help').dataset.first = first ? '1' : ''; }
 
@@ -1208,16 +1273,20 @@ function buildUI() {
   $('#seedGo').onclick = startGame;
   $('#cpLearn').onclick = openTtamiInfo;
   $('#cpReplay').onclick = replay;
+  $('#cpBrag').onclick = () => { SFX.play('click'); GB.open({ compose: true, seedId: G.seedId }); };
+  $('#titleBoard').onclick = () => { SFX.init(); SFX.play('click'); GB.open(); };
   $('#btnSound').onclick = () => { SFX.init(); SFX.setMuted(!SFX.muted); $('#btnSound').classList.toggle('off', SFX.muted); SFX.play('click'); };
   $('#btnMusic').onclick = () => { SFX.init(); SFX.setBgm(!SFX.bgm); $('#btnMusic').classList.toggle('off', !SFX.bgm); SFX.play('click'); };
   $('#btnHelp').onclick = () => { SFX.play('click'); showHelp(false); };
   $('#btnHome').onclick = goHome;
+  $('#btnPlaza').onclick = goPlaza;
   $('#helpClose').onclick = () => { SFX.play('click'); $('#help').classList.remove('show'); };
   $('#dialog').onclick = () => advanceDialog();
   $('#actBtn').onclick = (e) => { e.preventDefault(); if (!advanceDialog()) interact(); };
 
   window.addEventListener('keydown', (e) => {
-    if (e.target.tagName === 'INPUT') return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (GB.isOpen() || MP.menuOpen()) return;
     G.keys[e.code] = true;
     if (['Space', 'KeyE', 'Enter', 'KeyZ'].includes(e.code)) {
       if ($('#help').classList.contains('show')) { $('#help').classList.remove('show'); e.preventDefault(); return; }

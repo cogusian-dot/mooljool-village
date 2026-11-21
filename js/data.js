@@ -44,7 +44,7 @@ const CHARACTERS = [
 // 목수 요정 (고를 수 없는 마을 주민 · 기본이에 수건 머리띠)
 const CARPENTER = { id: 'sadalhee', name: '사달희', acc: 'towel', seed: 'pepper', voice: 0.78, line: '뚝딱뚝딱, 나무로 뭐든 만들지!' };
 
-// req: 성장 단계별로 땀땀이가 요청하는 [물, 양분] 개수 (새싹 → 어린 식물 → 완성)
+// req: 성장 단계별로 땀땀이가 요청하는 [물, 양분] 개수. 게임은 2단계(씨앗 → 새싹 → 완성)라서 앞의 두 묶음만 써요
 const SEEDS = [
   { id: 'basil', name: '바질', emoji: '🌿', pack: '#5DB866',
     seed: '깨알만 한 까만 씨앗이에요. 물에 닿으면 겉이 젤리처럼 투명하게 부풀어 올라요.',
@@ -189,3 +189,24 @@ function J(s, a, b) { return s + (hasJong(s) ? a : b); }
 function callName(s) { return J(s, '아', '야'); }
 function plantShort(seed) { return seed.short || seed.name; }
 
+
+// ═════════ 방명록 설정 ═════════
+// dbUrl: Firebase 실시간 데이터베이스 주소를 따옴표 안에 붙여 넣으세요. (README '방명록 켜기' 참고)
+//   예) 'https://mooljool-village-default-rtdb.asia-southeast1.firebasedatabase.app'
+//   비워 두면 '체험 모드'로 동작해요. 체험 모드에서는 같은 기기·같은 브라우저 안에서만 글이 보여요.
+const GUESTBOOK = {
+  dbUrl: '',
+  room: 'guestbook',   // 전시회마다 새 게시판을 쓰고 싶으면 이름만 바꾸세요 (예: 'gtec2026')
+  maxNotes: 300,       // 게시판에 보여 줄 최근 글 수
+  maxLength: 40,       // 한 글의 최대 글자 수
+  cooldownSec: 30,     // 같은 기기에서 다시 쓰기까지 기다리는 시간(초)
+};
+
+// 수확 자랑: 씨앗별로 무엇을 수확하는지 (열매가 없으면 잎이나 꽃)
+const HARVEST = {
+  basil: '바질 잎 한 줌', perilla: '깻잎 한 장', tomato: '방울토마토 한 송이', sunflower: '해바라기 한 송이',
+  lettuce: '상추 한 장', strawberry: '딸기 한 알', pepper: '미니 고추 하나', marigold: '메리골드 한 송이',
+  rosemary: '로즈마리 한 가지', mint: '민트 잎 한 장', radish: '래디시 한 뿌리', bean: '강낭콩 꼬투리 하나',
+  nasturtium: '한련화 한 송이', zinnia: '백일홍 한 송이', catgrass: '캣그라스 한 줌', portulaca: '채송화 한 송이',
+  clover: '네잎클로버 한 잎', cotton: '목화솜 한 송이',
+};

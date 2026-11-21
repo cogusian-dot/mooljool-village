@@ -199,6 +199,51 @@ function buildCharacter(def) {
   return root;
 }
 
+// 기영이 머리: 몸통 옆면이 그대로 위로 이어지다가 가장자리만 일정하게 뾰족해지는 왕관 모양 (안쪽은 평평)
+function spikyCrownGeo() {
+  const HW = 0.2, HD = 0.12, R = 0.3, TEETH = 22, PER = 10, N = TEETH * PER;
+  const Y0 = 0.66, Y1 = 0.99, VALLEY = 1.035, TIP = 1.2, CAP = 0.985;
+  const segs = [2 * HD, Math.PI / 2 * R, 2 * HW, Math.PI / 2 * R, 2 * HD, Math.PI / 2 * R, 2 * HW, Math.PI / 2 * R];
+  const total = segs.reduce((a, b) => a + b, 0);
+  // 둘레 위의 점과 바깥 방향 (오른쪽 옆면 가운데에서 시작해 반시계 방향)
+  function outline(s) {
+    s = ((s % total) + total) % total;
+    const C = [[HW, HD], [-HW, HD], [-HW, -HD], [HW, -HD]];
+    let i = 0; while (s > segs[i]) { s -= segs[i]; i++; }
+    const k = i >> 1;
+    if (i % 2 === 1) { const a = k * Math.PI / 2 + s / R, c = C[k]; return [c[0] + Math.cos(a) * R, c[1] + Math.sin(a) * R, Math.cos(a), Math.sin(a)]; }
+    if (k === 0) return [HW + R, -HD + s, 1, 0];
+    if (k === 1) return [HW - s, HD + R, 0, 1];
+    if (k === 2) return [-HW - R, HD - s, -1, 0];
+    return [-HW + s, -HD - R, 0, -1];
+  }
+  const pos = [], idx = [];
+  const ROWS = [[0, Y0, 0], [0.004, Y1, 0], [-0.03, 0, 1], [-0.085, CAP + 0.012, 0], [-0.13, CAP, 0]]; // [바깥쪽 오프셋, 높이, 뾰족 끝 여부]
+  for (let j = 0; j < N; j++) {
+    const f = (j % PER) / PER, tri = 1 - Math.abs(2 * f - 1);
+    const h = VALLEY + (TIP - VALLEY) * Math.pow(tri, 1.25);     // 골은 둥글게, 끝은 뾰족하게
+    const [x, z, nx, nz] = outline((j + PER / 2) / N * total);
+    for (const [off, y, tip] of ROWS) {
+      const o = tip ? off * (1 - 0.75 * Math.pow(tri, 2)) - 0.008 : off;
+      pos.push(x + nx * o, tip ? h : y, z + nz * o);
+    }
+  }
+  const RN = ROWS.length;
+  for (let j = 0; j < N; j++) {
+    const a = j * RN, b = ((j + 1) % N) * RN;
+    for (let r = 0; r < RN - 1; r++) idx.push(a + r, a + r + 1, b + r, b + r, a + r + 1, b + r + 1);
+  }
+  const center = pos.length / 3; pos.push(0, CAP, 0);
+  for (let j = 0; j < N; j++) idx.push(j * RN + RN - 1, center, ((j + 1) % N) * RN + RN - 1);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx); g.computeVertexNormals();
+  // 겉면이 바깥을 보도록 방향 확인 (첫 삼각형 법선이 바깥쪽이 아니면 뒤집기)
+  const nrm = g.attributes.normal; if (nrm.getX(0) < 0) { for (let i = 0; i < idx.length; i += 3) { const t = idx[i]; idx[i] = idx[i + 1]; idx[i + 1] = t; } g.setIndex(idx); g.computeVertexNormals(); }
+  // 병합할 때 다른 도형과 속성이 맞도록 uv를 채워 둠
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(pos.length / 3 * 2), 2));
+  return g;
+}
 function buildAccessory(acc, top, body, deco, bm) {
   const red = M('#E5322E'), white = M('#FFFFFF', { rim: 0.05 }), black = M('#2A2422', { r: 0.5 }), brown = M('#5A3018');
   switch (acc) {
@@ -330,16 +375,15 @@ function buildAccessory(acc, top, body, deco, bm) {
       break;
     }
     case 'spiky': { // 기영이: 뾰족 머리 · 큰 눈 · 주황 티셔츠
-      for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2, cx = Math.cos(a), cz = Math.sin(a); add(top, new THREE.ConeGeometry(0.115, 0.26, 12), bm, Math.sign(cx) * Math.pow(Math.abs(cx), 0.6) * 0.38, 0.07, Math.sign(cz) * Math.pow(Math.abs(cz), 0.6) * 0.3); }
-      for (const [px, pz] of [[0, 0], [-0.18, 0], [0.18, 0]]) add(top, new THREE.ConeGeometry(0.12, 0.22, 12), bm, px, 0.07, pz);
+      add(top, spikyCrownGeo(), bm, 0, -1.02, 0);
       const wh = M('#F6E7C8'), ir = M('#6A3A1E'), pu = M('#3A1E10'), hi = M('#FFFFFF', { em: '#FFFFFF', ei: 0.4 }), line = M('#7A4520');
       for (const s of [-1, 1]) {
         dec(deco, wh, 0.1, 0.105, 0.025, s * 0.2, 0.73, -0.004);
         dec(deco, ir, 0.078, 0.088, 0.028, s * 0.195, 0.725, 0.004);
         dec(deco, pu, 0.04, 0.045, 0.03, s * 0.195, 0.725, 0.012);
         dec(deco, hi, 0.024, 0.024, 0.02, s * 0.195 + 0.03, 0.76, 0.03, 8); dec(deco, hi, 0.016, 0.016, 0.02, s * 0.195 - 0.03, 0.695, 0.03, 8);
-        const lid = add(deco, roundedBox(0.2, 0.022, 0.02, 0.009, 1), line, s * 0.2, 0.825, faceZ(0.2, 0.825) + 0.012); lid.rotation.z = -s * 0.08; lid.rotation.x = -0.3;
-        const brow = add(deco, roundedBox(0.2, 0.02, 0.02, 0.009, 1), line, s * 0.24, 0.915, faceZ(0.24, 0.915) + 0.008); brow.rotation.z = -s * 0.18; brow.rotation.x = -0.6;
+        const lid = add(deco, roundedBox(0.2, 0.022, 0.02, 0.009, 1), line, s * 0.2, 0.825, faceZ(0.2, 0.6) + 0.008); lid.rotation.z = -s * 0.08;
+        const brow = add(deco, roundedBox(0.2, 0.02, 0.02, 0.009, 1), line, s * 0.24, 0.915, faceZ(0.24, 0.6) + 0.006); brow.rotation.z = -s * 0.18; brow.rotation.y = s * 0.12;
         for (const [fx, fy] of [[0.37, 0.66], [0.31, 0.63], [0.35, 0.6]]) dec(deco, line, 0.012, 0.012, 0.008, s * fx, fy, 0.004, 6);
       }
       dec(deco, line, 0.014, 0.01, 0.01, 0.02, 0.65, 0.006, 6);
