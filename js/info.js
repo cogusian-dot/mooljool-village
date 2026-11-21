@@ -172,6 +172,7 @@ function initModelViewer() {
   MV = {
     playTray,
     stepTray(sec) { for (let i = 0; i < sec / 0.05; i++) updateTray(0.05); r.render(scene, cam); }, // 점검용: 시간 빨리 감기
+    shot(p, target) { cam.position.set(...p); ctl.target.set(...target); ctl.autoRotate = false; resize(); ctl.update(); r.render(scene, cam); }, // 점검용: 카메라 바로 옮기기
     start() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } },
     stop() { if (raf) cancelAnimationFrame(raf); raf = null; },
     setDrop(v) { dropTarget = v ? 1 : 0; },

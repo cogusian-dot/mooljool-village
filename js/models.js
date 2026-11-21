@@ -820,43 +820,60 @@ function partKind(name) {
   return 'other';
 }
 // ── 하단부 물받침대(서랍) ──
-// 원본 CAD「1-0. 화분 외형 - 하단부-물받침대.stp」의 치수로 빚은 반원 고리 모양 서랍.
+// 원본 CAD「1-0. 화분 외형 - 하단부-물받침대.stp」의 치수로 빚은 D자(반원) 통 모양 서랍.
+// 바닥이 꽉 막힌 반원 그릇 + 지름 쪽 곧은 벽(3mm)이라 물이 새지 않아요.
 // CAD 서랍 좌표(x_d, y_d, z_d, mm) → 하단부 좌표: x = -z_d, y = y_d - 50, z = x_d
 // (서랍과 하단부의 맞춤 핀 Ø4.8 두 개가 이 변환으로 정확히 겹쳐요). 서랍은 하단부의 -x 쪽 절반에 들어가고 -x 방향으로 빠져요.
+// 바깥 곡면은 x_d<0 쪽 1/4(두꺼운 쪽)과 x_d>0 쪽 1/4(얇은 쪽)이 달라요. 둘 사이 단차 면에 핀 두 개가 있어요.
 const TRAY = {
-  inR: 80, wallIn: 83, floorTop: 13, floorBot: 10, top: 50, // mm (CAD 서랍 좌표)
-  outer: (y) => 55 + Math.sqrt(Math.max(0, 50 * 50 - (50 - y) ** 2)), // 바깥 곡면: 토러스 R55 r50
-  inner: (y) => 55 + Math.sqrt(Math.max(0, 47 * 47 - (50 - y) ** 2)), // 안쪽 곡면(벽 두께 3mm)
-  waterFull: 26, waterEmpty: 13.3,
+  floorTop: 13, floorBot: 10, top: 50, ledge: 46.8, wall: 3, // mm (CAD 서랍 좌표)
+  outer: (y) => 55 + Math.sqrt(Math.max(0, 50 * 50 - (50 - y) ** 2)),                 // 두꺼운 쪽 바깥: 토러스 R55 r50 (85→105)
+  outerSlim: (y) => y <= 20 ? 80 : 51.2527 + Math.sqrt(Math.max(0, 41.5473 ** 2 - (50 - y) ** 2)), // 얇은 쪽 바깥: 원통 R80 → 토러스 (→92.7)
+  inner: (y) => 51.2527 + Math.sqrt(Math.max(0, 38.5473 ** 2 - (50 - y) ** 2)),         // 안쪽 그릇: 바닥 R62 → 위 R89.8
+  waterFull: 28, waterEmpty: 13.3,
 };
-function trayLathe(pts) { // pts: [[r, y_d], ...] mm → 하단부 좌표(m)의 반바퀴 회전체 (-x 쪽)
-  return new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r / 1000, (y - 50) / 1000)), 48, Math.PI, Math.PI);
+// pts: [[r, y_d], ...] mm → 하단부 좌표(m)의 회전체. part: 'thick'(x_d<0) | 'slim'(x_d>0) | 'all'(반바퀴 전체)
+function trayLathe(pts, part = 'all') {
+  const [s, l] = part === 'thick' ? [Math.PI, Math.PI / 2] : part === 'slim' ? [Math.PI * 1.5, Math.PI / 2] : [Math.PI, Math.PI];
+  return new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r / 1000, (y - 50) / 1000)), part === 'all' ? 48 : 24, s, l);
 }
 function makeTrayGeometry() {
   const T = TRAY, arc = (f, y0, y1, n) => Array.from({ length: n + 1 }, (_, i) => { const y = y0 + (y1 - y0) * i / n; return [f(y), y]; });
-  const outerArc = arc(T.outer, T.floorBot, T.top, 14), innerArc = arc(T.inner, T.top, T.floorTop, 14);
+  const thickOut = arc(T.outer, T.floorBot, T.top, 16);
+  const slimOut = [[80, T.floorBot], ...arc(T.outerSlim, 20, T.ledge, 12)];
+  const innerArc = arc(T.inner, T.top, T.floorTop, 16);
   const pieces = [
-    [[T.inR, T.floorBot], [T.outer(T.floorBot), T.floorBot]], // 바닥 아랫면
-    outerArc,                                                  // 바깥 곡면
-    [[T.outer(T.top), T.top], [T.inner(T.top), T.top]],        // 바깥 테두리 윗면
-    innerArc,                                                  // 안쪽 곡면
-    [[T.inner(T.floorTop), T.floorTop], [T.wallIn, T.floorTop]], // 안쪽 바닥
-    [[T.wallIn, T.floorTop], [T.wallIn, T.top]],               // 안쪽 벽(가운데 기둥 쪽)
-    [[T.wallIn, T.top], [T.inR, T.top]],                       // 안쪽 벽 윗면
-    [[T.inR, T.top], [T.inR, T.floorBot]],                     // 가운데 기둥에 닿는 면 (CAD R80)
-  ].map(trayLathe);
-  // 양 끝 단면 막기
-  const prof = [[T.inR, T.floorBot], ...outerArc, ...innerArc, [T.wallIn, T.floorTop], [T.wallIn, T.top], [T.inR, T.top]];
-  const shape = new THREE.Shape(prof.map(([r, y]) => new THREE.Vector2(r / 1000, (y - 50) / 1000)));
-  pieces.push(new THREE.ShapeGeometry(shape).rotateY(Math.PI / 2), new THREE.ShapeGeometry(shape).rotateY(-Math.PI / 2));
-  // 앞쪽 손잡이
-  const grip = new THREE.SphereGeometry(1, 20, 14).scale(0.004, 0.006, 0.022).translate(-T.outer(38) / 1000 + 0.001, -0.012, 0);
-  pieces.push(grip);
-  return THREE.BufferGeometryUtils.mergeBufferGeometries(pieces, false); // 조각마다 자기 법선을 유지해 매끈하게
+    trayLathe([[0, T.floorBot], [T.outer(T.floorBot), T.floorBot]], 'thick'),           // 바닥 아랫면
+    trayLathe([[0, T.floorBot], [80, T.floorBot]], 'slim'),
+    trayLathe(thickOut, 'thick'),                                                        // 바깥 곡면
+    trayLathe(slimOut, 'slim'),
+    trayLathe([[T.outer(T.top), T.top], [T.inner(T.top), T.top]], 'thick'),             // 테두리 윗면
+    trayLathe([[T.outerSlim(T.ledge), T.ledge], [T.inner(T.ledge), T.ledge]], 'slim'),
+    trayLathe(innerArc, 'thick'),                                                        // 안쪽 그릇 곡면
+    trayLathe(arc(T.inner, T.ledge, T.floorTop, 16), 'slim'),
+    trayLathe([[T.inner(T.floorTop), T.floorTop], [0, T.floorTop]], 'all'),             // 안쪽 바닥 (가운데까지 꽉 막힘)
+  ];
+  // 지름 쪽 곧은 벽(두께 3mm): 서랍 단면 모양을 그대로 밀어내요
+  const sec = [
+    ...thickOut.map(([r, y]) => [-r, y]),                       // 두꺼운 쪽 바깥 (아래→위)
+    [T.inner(T.top), T.top], [T.inner(T.ledge), T.ledge],        // 얇은 쪽 위 가장자리
+    ...slimOut.slice().reverse(),                                // 얇은 쪽 바깥 (위→아래)
+  ];
+  const secShape = new THREE.Shape(sec.map(([u, y]) => new THREE.Vector2(u / 1000, (y - 50) / 1000)));
+  pieces.push(new THREE.ExtrudeGeometry(secShape, { depth: T.wall / 1000, bevelEnabled: false, curveSegments: 4 }).rotateY(-Math.PI / 2));
+  // 두꺼운 쪽·얇은 쪽 사이 단차 면 (x_d = 0, 앞쪽 가운데)
+  const stepPts = [...arc(T.outer, T.floorBot, T.top, 16).map(([r, y]) => [-r, y]), [-T.inner(T.top), T.top], [-T.inner(T.ledge), T.ledge],
+    ...slimOut.slice().reverse().map(([r, y]) => [-r, y])];
+  pieces.push(new THREE.ShapeGeometry(new THREE.Shape(stepPts.map(([u, y]) => new THREE.Vector2(u / 1000, (y - 50) / 1000)))));
+  // 단차 면의 맞춤 핀 두 개 (CAD Ø4.8, (y 20, z 88.5) · (y 42, z 99.3))
+  for (const [y, zd] of [[20, 88.54], [42, 99.28]]) {
+    pieces.push(new THREE.CylinderGeometry(0.0024, 0.0024, 0.0021, 16).rotateX(Math.PI / 2).translate(-zd / 1000, (y - 50) / 1000, 0.00105));
+  }
+  return THREE.BufferGeometryUtils.mergeBufferGeometries(pieces.map(g => g.index ? g.toNonIndexed() : g), false);
 }
-function makeTrayWaterGeometry(level) { // level: CAD 서랍 높이(mm)
+function makeTrayWaterGeometry(level) { // level: CAD 서랍 높이(mm) — 반원 물 표면이 가운데까지 꽉 차요
   const h = Math.max(TRAY.waterEmpty, level);
-  return trayLathe([[TRAY.wallIn + 0.3, h], [TRAY.inner(h) - 0.3, h]]);
+  return trayLathe([[0, h], [TRAY.inner(h) - 0.3, h]], 'all');
 }
 // 하단부 메시 옆에 서랍을 달아요. 슬라이드·기울기를 위해 그룹을 겹쳐 둬요.
 function addTtamiDrawer(bottomMesh, material, opts = {}) {
