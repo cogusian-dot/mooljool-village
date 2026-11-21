@@ -1,0 +1,39 @@
+{
+  "rules": {
+    "$room": {
+      ".read": "$room.length <= 40",
+      "notes": {
+        "$id": {
+          ".write": "!data.exists() && newData.exists()",
+          ".validate": "newData.hasChildren(['name', 'msg', 'seed', 'char', 'color', 'ts'])",
+          "name": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 8" },
+          "msg": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 60" },
+          "seed": { ".validate": "newData.isString() && newData.val().length <= 20" },
+          "char": { ".validate": "newData.isString() && newData.val().length <= 20" },
+          "color": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5" },
+          "ts": { ".validate": "newData.val() === now" },
+          "$other": { ".validate": false }
+        }
+      },
+      "players": {
+        "$cid": {
+          ".write": "$cid.length <= 24",
+          ".validate": "newData.hasChildren(['n', 'c', 'm', 'x', 'y', 'z', 'r', 'a', 'an', 'tg', 't'])",
+          "n": { ".validate": "newData.isString() && newData.val().length <= 8" },
+          "c": { ".validate": "newData.isString() && newData.val().length <= 12" },
+          "m": { ".validate": "newData.isNumber() && (newData.val() === 0 || newData.val() === 1)" },
+          "x": { ".validate": "newData.isNumber() && newData.val() >= -60 && newData.val() <= 60" },
+          "y": { ".validate": "newData.isNumber() && newData.val() >= -5 && newData.val() <= 20" },
+          "z": { ".validate": "newData.isNumber() && newData.val() >= -60 && newData.val() <= 60" },
+          "r": { ".validate": "newData.isNumber() && newData.val() >= -7 && newData.val() <= 7" },
+          "a": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3" },
+          "an": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 100000" },
+          "tg": { ".validate": "newData.isString() && newData.val().length <= 200" },
+          "t": { ".validate": "newData.val() === now" },
+          "$other": { ".validate": false }
+        }
+      },
+      "$other": { ".validate": false }
+    }
+  }
+}

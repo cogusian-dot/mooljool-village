@@ -87,71 +87,6 @@ function initModelViewer() {
   ctl.autoRotate = true; ctl.autoRotateSpeed = 1.2;
   ctl.addEventListener('start', () => { ctl.autoRotate = false; });
 
-  // ── 물받이통: 물 주기 → 서랍 열기 → 고인 물 버리기 → 서랍 닫기 ──
-  const dw = u.drawer, bottomMesh = dw && dw.slide.parent;
-  const fx = new THREE.Group(); if (bottomMesh) bottomMesh.add(fx); // 하단부 좌표(m)에서 물방울을 움직여요
-  let holeL = new THREE.Vector3(-0.03, 0.086, 0.01); // 흙 구멍 위치(하단부 좌표)
-  if (bottomMesh) { TTAMI_SRC.updateMatrixWorld(true); const sb = TTAMI_SRC.getObjectByName(bottomMesh.name); if (sb) holeL = TTAMI_INFO.hole.clone().applyMatrix4(sb.matrixWorld.clone().invert()); }
-  const dropGeo = new THREE.SphereGeometry(0.0022, 10, 8).scale(1, 1.5, 1);
-  const dropMat = new THREE.MeshStandardMaterial({ color: '#4FB0F5', roughness: 0.15, transparent: true, opacity: 0.9 });
-  const drops = [];
-  function spawnDrop(p, v, stopY) {
-    let d = drops.find(o => !o.visible);
-    if (!d) { d = new THREE.Mesh(dropGeo, dropMat); fx.add(d); drops.push(d); }
-    d.visible = true; d.position.copy(p); d.userData.v = v; d.userData.stop = stopY; return d;
-  }
-  const TL = { rain: [0, 2.4], fill: [0.8, 3.0], open: [3.0, 4.1], tiltIn: [4.4, 5.2], pour: [5.0, 6.6], tiltOut: [6.7, 7.4], close: [7.6, 8.6], end: 9.0 };
-  const seg = (a, x) => Math.min(1, Math.max(0, (x - a[0]) / (a[1] - a[0])));
-  let tray = null, level = TRAY.waterEmpty;
-  function setLevel(h) {
-    if (!dw || !dw.water || Math.abs(h - level) < 0.05) return;
-    level = h; dw.water.visible = h > TRAY.waterEmpty + 0.1;
-    dw.water.geometry.dispose(); dw.water.geometry = makeTrayWaterGeometry(h);
-  }
-  const trayMsg = (m) => { $('#mvState').textContent = m; };
-  function updateTray(dt) {
-    for (const d of drops) if (d.visible) {
-      d.userData.v.y -= 0.9 * dt; d.position.addScaledVector(d.userData.v, dt);
-      if (d.position.y < d.userData.stop) d.visible = false;
-    }
-    if (!tray || !dw) return;
-    const k = (tray.t += dt), once = (name, fn) => { if (!tray.done[name]) { tray.done[name] = true; fn(); } };
-    if (k < TL.rain[1]) { // 화분 위로 물 뿌리기
-      tray.acc += dt * 45;
-      while (tray.acc > 1) {
-        tray.acc--; const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * 0.035;
-        spawnDrop(new THREE.Vector3(holeL.x + Math.cos(a) * r, holeL.y + 0.15 + Math.random() * 0.05, holeL.z + Math.sin(a) * r), new THREE.Vector3(0, -0.25, 0), holeL.y + 0.004);
-      }
-    }
-    setLevel(TRAY.waterEmpty + (TRAY.waterFull - TRAY.waterEmpty) * ease.inOut(seg(TL.fill, k)) * (1 - seg(TL.pour, k)));
-    dw.slide.position.x = -0.11 * ease.inOut(seg(TL.open, k)) * (1 - ease.inOut(seg(TL.close, k)));
-    dw.tilt.rotation.z = 0.5 * ease.inOut(seg(TL.tiltIn, k)) * (1 - ease.inOut(seg(TL.tiltOut, k)));
-    if (k > TL.pour[0] + 0.2 && k < TL.pour[1]) { // 앞쪽 테두리로 물이 쏟아져요
-      tray.pacc += dt * 70;
-      while (tray.pacc > 1) {
-        tray.pacc--; const b = (Math.random() - 0.5) * 0.9, R = TRAY.outer(TRAY.top) / 1000 - 0.002;
-        const p = dw.body.localToWorld(new THREE.Vector3(-R * Math.cos(b), -0.002, R * Math.sin(b))); fx.worldToLocal(p);
-        spawnDrop(p, new THREE.Vector3(-0.1 - Math.random() * 0.06, 0.01, (Math.random() - 0.5) * 0.04), -0.05);
-      }
-    }
-    if (k >= TL.open[0]) once('open', () => { SFX.play('open'); trayMsg('물받이통에 물이 고였어요 · 서랍을 열어요'); });
-    if (k >= TL.tiltIn[0]) once('pour', () => { SFX.play('splash'); trayMsg('고인 물을 버려요'); });
-    if (k >= TL.close[0]) once('close', () => { SFX.play('whoosh'); trayMsg('깨끗해진 서랍을 다시 쏙'); });
-    if (k >= TL.close[1]) once('shut', () => SFX.play('tok'));
-    if (k >= TL.end) {
-      tray = null; setLevel(TRAY.waterEmpty); dw.slide.position.x = 0; dw.tilt.rotation.z = 0;
-      $('[data-mv="tray"]').classList.remove('on'); trayMsg('물받이통을 비웠어요 · 다시 눌러 볼까요?');
-    }
-  }
-  function playTray() {
-    if (tray || !dw) return;
-    tray = { t: 0, acc: 0, pacc: 0, done: {} };
-    $('[data-mv="tray"]').classList.add('on');
-    trayMsg('화분에 물을 줘요'); SFX.play('splash');
-    const a = 140 * Math.PI / 180;
-    tweenCam([Math.cos(a) * 6.4 - 0.6, 3.0, Math.sin(a) * 6.4], [-0.75, 0.4, 0]);
-  }
-
   let raf = null, last = performance.now(), cut = 0, cutT = 0, dropT = 1, dropTarget = 1, t = 0;
   function resize() {
     const w = canvas.clientWidth, h = canvas.clientHeight;
@@ -165,24 +100,20 @@ function initModelViewer() {
     plane.constant = 2 - cut * 2.0;
     dropT += (dropTarget - dropT) * Math.min(1, dt * 3.5);
     if (u.drop) u.drop.position.y = u.dropBase.y + TTAMI_INFO.dropHideY * (1 - dropT) + (dropT > 0.95 ? Math.sin(t * 4) * 0.0015 : 0);
-    updateTray(dt);
     ctl.update();
     r.render(scene, cam);
   }
   MV = {
-    playTray,
-    stepTray(sec) { for (let i = 0; i < sec / 0.05; i++) updateTray(0.05); r.render(scene, cam); }, // 점검용: 시간 빨리 감기
     start() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } },
     stop() { if (raf) cancelAnimationFrame(raf); raf = null; },
     setDrop(v) { dropTarget = v ? 1 : 0; },
     setCut(v) { cutT = v ? 1 : 0; if (v) { ctl.autoRotate = false; } },
     view(n) { const p = n === 'front' ? [0, 1.3, 5.2] : n === 'top' ? [0.01, 5.6, 0.6] : [3.4, 2.3, 4.6]; tweenCam(p); },
   };
-  function tweenCam(p, target = [0, 0.85, 0]) {
+  function tweenCam(p) {
     const from = cam.position.clone(), to = new THREE.Vector3(...p); let k = 0;
-    const tFrom = ctl.target.clone(), tTo = new THREE.Vector3(...target);
     ctl.autoRotate = false;
-    const step = () => { k = Math.min(1, k + 0.04); const e = ease.inOut(k); cam.position.lerpVectors(from, to, e); ctl.target.lerpVectors(tFrom, tTo, e); if (k < 1) requestAnimationFrame(step); };
+    const step = () => { k = Math.min(1, k + 0.04); cam.position.lerpVectors(from, to, ease.inOut(k)); if (k < 1) requestAnimationFrame(step); };
     step();
   }
   $$('[data-mv]').forEach(b => b.onclick = () => {
@@ -190,7 +121,6 @@ function initModelViewer() {
     const a = b.dataset.mv;
     if (a === 'drop') { const on = !b.classList.contains('on'); b.classList.toggle('on', on); MV.setDrop(on); SFX.play(on ? 'rise' : 'absorb'); $('#mvState').textContent = on ? '흙이 말랐어요 · 물방울이 쏙' : '수분이 충분해요 · 물방울이 숨었어요'; }
     if (a === 'cut') { const on = !b.classList.contains('on'); b.classList.toggle('on', on); MV.setCut(on); if (on) MV.view('front'); }
-    if (a === 'tray') MV.playTray();
     if (a === 'front' || a === 'top' || a === 'iso') MV.view(a);
   });
 }

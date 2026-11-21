@@ -199,6 +199,51 @@ function buildCharacter(def) {
   return root;
 }
 
+// 기영이 머리: 몸통 옆면이 그대로 위로 이어지다가 가장자리만 일정하게 뾰족해지는 왕관 모양 (안쪽은 평평)
+function spikyCrownGeo() {
+  const HW = 0.2, HD = 0.12, R = 0.3, TEETH = 22, PER = 10, N = TEETH * PER;
+  const Y0 = 0.66, Y1 = 0.99, VALLEY = 1.035, TIP = 1.2, CAP = 0.985;
+  const segs = [2 * HD, Math.PI / 2 * R, 2 * HW, Math.PI / 2 * R, 2 * HD, Math.PI / 2 * R, 2 * HW, Math.PI / 2 * R];
+  const total = segs.reduce((a, b) => a + b, 0);
+  // 둘레 위의 점과 바깥 방향 (오른쪽 옆면 가운데에서 시작해 반시계 방향)
+  function outline(s) {
+    s = ((s % total) + total) % total;
+    const C = [[HW, HD], [-HW, HD], [-HW, -HD], [HW, -HD]];
+    let i = 0; while (s > segs[i]) { s -= segs[i]; i++; }
+    const k = i >> 1;
+    if (i % 2 === 1) { const a = k * Math.PI / 2 + s / R, c = C[k]; return [c[0] + Math.cos(a) * R, c[1] + Math.sin(a) * R, Math.cos(a), Math.sin(a)]; }
+    if (k === 0) return [HW + R, -HD + s, 1, 0];
+    if (k === 1) return [HW - s, HD + R, 0, 1];
+    if (k === 2) return [-HW - R, HD - s, -1, 0];
+    return [-HW + s, -HD - R, 0, -1];
+  }
+  const pos = [], idx = [];
+  const ROWS = [[0, Y0, 0], [0.004, Y1, 0], [-0.03, 0, 1], [-0.085, CAP + 0.012, 0], [-0.13, CAP, 0]]; // [바깥쪽 오프셋, 높이, 뾰족 끝 여부]
+  for (let j = 0; j < N; j++) {
+    const f = (j % PER) / PER, tri = 1 - Math.abs(2 * f - 1);
+    const h = VALLEY + (TIP - VALLEY) * Math.pow(tri, 1.25);     // 골은 둥글게, 끝은 뾰족하게
+    const [x, z, nx, nz] = outline((j + PER / 2) / N * total);
+    for (const [off, y, tip] of ROWS) {
+      const o = tip ? off * (1 - 0.75 * Math.pow(tri, 2)) - 0.008 : off;
+      pos.push(x + nx * o, tip ? h : y, z + nz * o);
+    }
+  }
+  const RN = ROWS.length;
+  for (let j = 0; j < N; j++) {
+    const a = j * RN, b = ((j + 1) % N) * RN;
+    for (let r = 0; r < RN - 1; r++) idx.push(a + r, a + r + 1, b + r, b + r, a + r + 1, b + r + 1);
+  }
+  const center = pos.length / 3; pos.push(0, CAP, 0);
+  for (let j = 0; j < N; j++) idx.push(j * RN + RN - 1, center, ((j + 1) % N) * RN + RN - 1);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx); g.computeVertexNormals();
+  // 겉면이 바깥을 보도록 방향 확인 (첫 삼각형 법선이 바깥쪽이 아니면 뒤집기)
+  const nrm = g.attributes.normal; if (nrm.getX(0) < 0) { for (let i = 0; i < idx.length; i += 3) { const t = idx[i]; idx[i] = idx[i + 1]; idx[i + 1] = t; } g.setIndex(idx); g.computeVertexNormals(); }
+  // 병합할 때 다른 도형과 속성이 맞도록 uv를 채워 둠
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(pos.length / 3 * 2), 2));
+  return g;
+}
 function buildAccessory(acc, top, body, deco, bm) {
   const red = M('#E5322E'), white = M('#FFFFFF', { rim: 0.05 }), black = M('#2A2422', { r: 0.5 }), brown = M('#5A3018');
   switch (acc) {
@@ -330,16 +375,15 @@ function buildAccessory(acc, top, body, deco, bm) {
       break;
     }
     case 'spiky': { // 기영이: 뾰족 머리 · 큰 눈 · 주황 티셔츠
-      for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2, cx = Math.cos(a), cz = Math.sin(a); add(top, new THREE.ConeGeometry(0.115, 0.26, 12), bm, Math.sign(cx) * Math.pow(Math.abs(cx), 0.6) * 0.38, 0.07, Math.sign(cz) * Math.pow(Math.abs(cz), 0.6) * 0.3); }
-      for (const [px, pz] of [[0, 0], [-0.18, 0], [0.18, 0]]) add(top, new THREE.ConeGeometry(0.12, 0.22, 12), bm, px, 0.07, pz);
+      add(top, spikyCrownGeo(), bm, 0, -1.02, 0);
       const wh = M('#F6E7C8'), ir = M('#6A3A1E'), pu = M('#3A1E10'), hi = M('#FFFFFF', { em: '#FFFFFF', ei: 0.4 }), line = M('#7A4520');
       for (const s of [-1, 1]) {
         dec(deco, wh, 0.1, 0.105, 0.025, s * 0.2, 0.73, -0.004);
         dec(deco, ir, 0.078, 0.088, 0.028, s * 0.195, 0.725, 0.004);
         dec(deco, pu, 0.04, 0.045, 0.03, s * 0.195, 0.725, 0.012);
         dec(deco, hi, 0.024, 0.024, 0.02, s * 0.195 + 0.03, 0.76, 0.03, 8); dec(deco, hi, 0.016, 0.016, 0.02, s * 0.195 - 0.03, 0.695, 0.03, 8);
-        const lid = add(deco, roundedBox(0.2, 0.022, 0.02, 0.009, 1), line, s * 0.2, 0.825, faceZ(0.2, 0.825) + 0.012); lid.rotation.z = -s * 0.08; lid.rotation.x = -0.3;
-        const brow = add(deco, roundedBox(0.2, 0.02, 0.02, 0.009, 1), line, s * 0.24, 0.915, faceZ(0.24, 0.915) + 0.008); brow.rotation.z = -s * 0.18; brow.rotation.x = -0.6;
+        const lid = add(deco, roundedBox(0.2, 0.022, 0.02, 0.009, 1), line, s * 0.2, 0.825, faceZ(0.2, 0.6) + 0.008); lid.rotation.z = -s * 0.08;
+        const brow = add(deco, roundedBox(0.2, 0.02, 0.02, 0.009, 1), line, s * 0.24, 0.915, faceZ(0.24, 0.6) + 0.006); brow.rotation.z = -s * 0.18; brow.rotation.y = s * 0.12;
         for (const [fx, fy] of [[0.37, 0.66], [0.31, 0.63], [0.35, 0.6]]) dec(deco, line, 0.012, 0.012, 0.008, s * fx, fy, 0.004, 6);
       }
       dec(deco, line, 0.014, 0.01, 0.01, 0.02, 0.65, 0.006, 6);
@@ -819,66 +863,13 @@ function partKind(name) {
   if (name.includes('분배') ) return 'board';
   return 'other';
 }
-// ── 하단부 물받침대(서랍) ──
-// 원본 CAD「1-0. 화분 외형 - 하단부-물받침대.stp」의 치수로 빚은 반원 고리 모양 서랍.
-// CAD 서랍 좌표(x_d, y_d, z_d, mm) → 하단부 좌표: x = -z_d, y = y_d - 50, z = x_d
-// (서랍과 하단부의 맞춤 핀 Ø4.8 두 개가 이 변환으로 정확히 겹쳐요). 서랍은 하단부의 -x 쪽 절반에 들어가고 -x 방향으로 빠져요.
-const TRAY = {
-  inR: 80, wallIn: 83, floorTop: 13, floorBot: 10, top: 50, // mm (CAD 서랍 좌표)
-  outer: (y) => 55 + Math.sqrt(Math.max(0, 50 * 50 - (50 - y) ** 2)), // 바깥 곡면: 토러스 R55 r50
-  inner: (y) => 55 + Math.sqrt(Math.max(0, 47 * 47 - (50 - y) ** 2)), // 안쪽 곡면(벽 두께 3mm)
-  waterFull: 26, waterEmpty: 13.3,
-};
-function trayLathe(pts) { // pts: [[r, y_d], ...] mm → 하단부 좌표(m)의 반바퀴 회전체 (-x 쪽)
-  return new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r / 1000, (y - 50) / 1000)), 48, Math.PI, Math.PI);
-}
-function makeTrayGeometry() {
-  const T = TRAY, arc = (f, y0, y1, n) => Array.from({ length: n + 1 }, (_, i) => { const y = y0 + (y1 - y0) * i / n; return [f(y), y]; });
-  const outerArc = arc(T.outer, T.floorBot, T.top, 14), innerArc = arc(T.inner, T.top, T.floorTop, 14);
-  const pieces = [
-    [[T.inR, T.floorBot], [T.outer(T.floorBot), T.floorBot]], // 바닥 아랫면
-    outerArc,                                                  // 바깥 곡면
-    [[T.outer(T.top), T.top], [T.inner(T.top), T.top]],        // 바깥 테두리 윗면
-    innerArc,                                                  // 안쪽 곡면
-    [[T.inner(T.floorTop), T.floorTop], [T.wallIn, T.floorTop]], // 안쪽 바닥
-    [[T.wallIn, T.floorTop], [T.wallIn, T.top]],               // 안쪽 벽(가운데 기둥 쪽)
-    [[T.wallIn, T.top], [T.inR, T.top]],                       // 안쪽 벽 윗면
-    [[T.inR, T.top], [T.inR, T.floorBot]],                     // 가운데 기둥에 닿는 면 (CAD R80)
-  ].map(trayLathe);
-  // 양 끝 단면 막기
-  const prof = [[T.inR, T.floorBot], ...outerArc, ...innerArc, [T.wallIn, T.floorTop], [T.wallIn, T.top], [T.inR, T.top]];
-  const shape = new THREE.Shape(prof.map(([r, y]) => new THREE.Vector2(r / 1000, (y - 50) / 1000)));
-  pieces.push(new THREE.ShapeGeometry(shape).rotateY(Math.PI / 2), new THREE.ShapeGeometry(shape).rotateY(-Math.PI / 2));
-  // 앞쪽 손잡이
-  const grip = new THREE.SphereGeometry(1, 20, 14).scale(0.004, 0.006, 0.022).translate(-T.outer(38) / 1000 + 0.001, -0.012, 0);
-  pieces.push(grip);
-  return THREE.BufferGeometryUtils.mergeBufferGeometries(pieces, false); // 조각마다 자기 법선을 유지해 매끈하게
-}
-function makeTrayWaterGeometry(level) { // level: CAD 서랍 높이(mm)
-  const h = Math.max(TRAY.waterEmpty, level);
-  return trayLathe([[TRAY.wallIn + 0.3, h], [TRAY.inner(h) - 0.3, h]]);
-}
-// 하단부 메시 옆에 서랍을 달아요. 슬라이드·기울기를 위해 그룹을 겹쳐 둬요.
-function addTtamiDrawer(bottomMesh, material, opts = {}) {
-  const slide = new THREE.Group(); slide.name = '물받침대_슬라이드';
-  const tilt = new THREE.Group(); tilt.position.set(-TRAY.outer(TRAY.floorBot) / 1000, (TRAY.floorBot - 50) / 1000, 0); slide.add(tilt);
-  const body = new THREE.Mesh(makeTrayGeometry(), material); body.name = '하단부_물받침대';
-  body.position.copy(tilt.position).negate(); body.castShadow = true; body.receiveShadow = true; tilt.add(body);
-  let water = null;
-  if (opts.water) {
-    water = new THREE.Mesh(makeTrayWaterGeometry(TRAY.waterEmpty), new THREE.MeshStandardMaterial({ color: '#3FA6F2', roughness: 0.12, metalness: 0, transparent: true, opacity: 0.92, side: THREE.DoubleSide }));
-    water.name = '물받침대_물'; water.visible = false; body.add(water);
-  }
-  bottomMesh.add(slide);
-  return { slide, tilt, body, water };
-}
 function makeTtami(scale, opts = {}) {
   const root = new THREE.Group();
   const inner = TTAMI_SRC.clone(true);
   const off = new THREE.Group(); off.add(inner);
   off.position.set(-TTAMI_INFO.center.x, -TTAMI_INFO.floorY, -TTAMI_INFO.center.z);
   const sc = new THREE.Group(); sc.scale.setScalar(scale); sc.add(off); root.add(sc);
-  let drop = null, bottom = null;
+  let drop = null;
   inner.traverse(o => {
     if (!o.isMesh) return;
     const k = partKind(o.name);
@@ -891,9 +882,7 @@ function makeTtami(scale, opts = {}) {
       else o.visible = false;
     }
     if (k === 'drop') drop = o;
-    if (k === 'bottom' && !bottom) bottom = o;
   });
-  const drawer = bottom ? addTtamiDrawer(bottom, bottom.material, { water: !!opts.viewer }) : null;
   // 흙
   const holeLocal = TTAMI_INFO.hole.clone().sub(new THREE.Vector3(TTAMI_INFO.center.x, TTAMI_INFO.floorY, TTAMI_INFO.center.z));
   let soil = null, anchor = new THREE.Group();
@@ -903,7 +892,7 @@ function makeTtami(scale, opts = {}) {
     anchor.position.copy(holeLocal).multiplyScalar(scale); anchor.position.y += 0.01 * scale; root.add(anchor);
   }
   const dropBase = drop ? drop.position.clone() : new THREE.Vector3();
-  root.userData = { drop, dropBase, drawer, anchor, soil, scale, dropT: 0, dropTarget: 0, plant: null, plantId: null, stage: -1 };
+  root.userData = { drop, dropBase, anchor, soil, scale, dropT: 0, dropTarget: 0, plant: null, plantId: null, stage: -1 };
   setTtamiDrop(root, 0, true);
   return root;
 }
