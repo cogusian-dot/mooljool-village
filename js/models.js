@@ -933,8 +933,10 @@ function makeTrayWaterGeometry(level) { // level: CAD 서랍 높이(mm) — 반�
 // 하단부 메시 옆에 서랍을 달아요. 슬라이드·기울기를 위해 그룹을 겹쳐 둬요.
 function addTtamiDrawer(bottomMesh, material, opts = {}) {
   const slide = new THREE.Group(); slide.name = '물받침대_슬라이드';
-  const tilt = new THREE.Group(); tilt.position.set(-TRAY.outer(TRAY.floorBot) / 1000, (TRAY.floorBot - 50) / 1000, 0); slide.add(tilt);
-  const body = new THREE.Mesh(makeTrayGeometry(), material); body.name = '하단부_물받침대';
+  // 서랍은 땀땀이 등 쪽(-z)으로 똑바로 빠지고, 뒤쪽 끝을 축으로 기울여 물을 버려요
+  const geo = makeTrayGeometry(); geo.computeBoundingBox(); const bb = geo.boundingBox;
+  const tilt = new THREE.Group(); tilt.position.set((bb.min.x + bb.max.x) / 2, (TRAY.floorBot - 50) / 1000, bb.min.z); slide.add(tilt);
+  const body = new THREE.Mesh(geo, material); body.name = '하단부_물받침대';
   body.position.copy(tilt.position).negate(); body.castShadow = true; body.receiveShadow = true; tilt.add(body);
   let water = null;
   if (opts.water) {
@@ -942,7 +944,7 @@ function addTtamiDrawer(bottomMesh, material, opts = {}) {
     water.name = '물받침대_물'; water.visible = false; body.add(water);
   }
   bottomMesh.add(slide);
-  return { slide, tilt, body, water };
+  return { slide, tilt, body, water, back: bb.min.z, cx: (bb.min.x + bb.max.x) / 2 };
 }
 function makeTtami(scale, opts = {}) {
   const root = new THREE.Group();

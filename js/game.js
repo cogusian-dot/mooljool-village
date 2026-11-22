@@ -245,7 +245,7 @@ function updateToolSwing(dt) {
 function updateHeadBucket(t) {
   const b = G.tools && G.tools.bucket; if (!b || G.swingTool === 'bucket') return;
   // 언덕에서 햇빛을 모을 때는 양동이를 가방에 넣어 둬요
-  const has = !!G.flags.bucket && ['play', 'cutscene', 'complete'].includes(G.mode) && !G.onHill && !G.sunHold && !G.inPlaza;
+  const has = !!G.flags.bucket && ['play', 'cutscene', 'complete'].includes(G.mode) && !G.onHill && !G.sunHold && !G.inPlaza && !G.throwing;
   b.visible = has; if (!has) return;
   const full = G.inv.water > 0, walk = Math.min(1, G.speed / 5);
   b.position.set(0, (G.headY || 1.0) + Math.abs(Math.sin(t * 12)) * 0.03 * walk, 0);
@@ -613,7 +613,11 @@ async function actPond() {
   if (G.inv.water >= MAX_WATER) { toast('물을 더는 담을 수 없어요 (최대 8)'); SFX.play('deny'); return; }
   await scoopWater();
 }
-async function actRock(r) {
+async function actRock(r) {   // 돌멩이 던지는 동안은 양동이를 가방에 넣어 둬요
+  G.throwing = true;
+  try { return await actRock0(r); } finally { G.throwing = false; }
+}
+async function actRock0(r) {
   if (!G.flags.bag) { toast('가방이 먼저 필요해요'); return; }
   if (!G.flags.rockTip) { G.flags.rockTip = true; await say(null, '바위에 반짝이가 붙어 있어요. 주변의 돌멩이를 던져서 떨어뜨려 봐요!'); }
   await throwPebble(r);
@@ -931,7 +935,7 @@ function updateLabels() {
   for (const n of G.npcs) {
     const d = G.player ? Math.hypot(G.pos.x - n.root.position.x, G.pos.z - n.root.position.z) : 99;
     const el = n.tag || (n.tag = makeTag(n.def.name));
-    if (G.mode === 'play' && d < 9 && !n.talking) {
+    if (G.mode === 'play' && d < 9 && !n.talking && !n.celebrate) {   // 완성 축하로 모인 요정들은 이름표 없이
       worldToScreen(n.root.position.clone().add(V3(0, 2.1 + (n.def.acc === 'santa' || n.def.acc === 'heart' ? 0.6 : 0.2), 0)), _s);
       el.style.transform = `translate(${_s.x}px, ${_s.y}px) translate(-50%, -100%)`;
       el.classList.toggle('show', _s.visible);

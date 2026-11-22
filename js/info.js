@@ -124,14 +124,15 @@ function initModelViewer() {
       }
     }
     setLevel(TRAY.waterEmpty + (TRAY.waterFull - TRAY.waterEmpty) * ease.inOut(seg(TL.fill, k)) * (1 - seg(TL.pour, k)));
-    dw.slide.position.x = -0.11 * ease.inOut(seg(TL.open, k)) * (1 - ease.inOut(seg(TL.close, k)));
-    dw.tilt.rotation.z = 0.5 * ease.inOut(seg(TL.tiltIn, k)) * (1 - ease.inOut(seg(TL.tiltOut, k)));
-    if (k > TL.pour[0] + 0.2 && k < TL.pour[1]) { // 앞쪽 테두리로 물이 쏟아져요
+    // 서랍처럼 등 쪽(-z)으로 똑바로 빠졌다가, 뒤로 기울여 물을 버리고, 다시 쏙
+    dw.slide.position.z = -0.13 * ease.inOut(seg(TL.open, k)) * (1 - ease.inOut(seg(TL.close, k)));
+    dw.tilt.rotation.x = -0.55 * ease.inOut(seg(TL.tiltIn, k)) * (1 - ease.inOut(seg(TL.tiltOut, k)));
+    if (k > TL.pour[0] + 0.2 && k < TL.pour[1]) { // 뒤쪽 끝으로 물이 쏟아져요
       tray.pacc += dt * 70;
       while (tray.pacc > 1) {
-        tray.pacc--; const b = (Math.random() - 0.5) * 0.9, R = TRAY.outer(TRAY.top) / 1000 - 0.002;
-        const p = dw.body.localToWorld(new THREE.Vector3(-R * Math.cos(b), -0.002, R * Math.sin(b))); fx.worldToLocal(p);
-        spawnDrop(p, new THREE.Vector3(-0.1 - Math.random() * 0.06, 0.01, (Math.random() - 0.5) * 0.04), -0.05);
+        tray.pacc--;
+        const p = dw.body.localToWorld(new THREE.Vector3(dw.cx + (Math.random() - 0.5) * 0.03, -0.002, dw.back + 0.004)); fx.worldToLocal(p);
+        spawnDrop(p, new THREE.Vector3((Math.random() - 0.5) * 0.04, 0.01, -0.1 - Math.random() * 0.06), -0.05);
       }
     }
     if (k >= TL.open[0]) once('open', () => { SFX.play('open'); trayMsg('물받이통에 물이 고였어요 · 서랍을 열어요'); });
@@ -139,7 +140,7 @@ function initModelViewer() {
     if (k >= TL.close[0]) once('close', () => { SFX.play('whoosh'); trayMsg('깨끗해진 서랍을 다시 쏙'); });
     if (k >= TL.close[1]) once('shut', () => SFX.play('tok'));
     if (k >= TL.end) {
-      tray = null; setLevel(TRAY.waterEmpty); dw.slide.position.x = 0; dw.tilt.rotation.z = 0;
+      tray = null; setLevel(TRAY.waterEmpty); dw.slide.position.z = 0; dw.tilt.rotation.x = 0;
       $('[data-mv="tray"]').classList.remove('on'); trayMsg('물받이통을 비웠어요 · 다시 눌러 볼까요?');
     }
   }
@@ -148,8 +149,8 @@ function initModelViewer() {
     tray = { t: 0, acc: 0, pacc: 0, done: {} };
     $('[data-mv="tray"]').classList.add('on');
     trayMsg('화분에 물을 줘요'); SFX.play('splash');
-    const a = 140 * Math.PI / 180;
-    tweenCam([Math.cos(a) * 6.4 - 0.6, 3.0, Math.sin(a) * 6.4], [-0.75, 0.4, 0]);
+    const a = -50 * Math.PI / 180;   // 서랍이 빠지는 등 쪽을 비스듬히 봐요
+    tweenCam([Math.cos(a) * 6.4, 3.0, Math.sin(a) * 6.4 - 0.6], [0, 0.4, -0.75]);
   }
 
   let raf = null, last = performance.now(), cut = 0, cutT = 0, dropT = 1, dropTarget = 1, t = 0;
