@@ -55,7 +55,9 @@ button:focus-visible, input:focus-visible { outline: 4px solid rgba(59,168,240,.
 @keyframes dropBob { 50% { transform: rotate(45deg) translate(-6px, -6px) scale(1.04); } }
 #title::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 48% at 50% 48%, rgba(255,250,240,.72), rgba(255,250,240,0) 70%); pointer-events: none; z-index: -1; }
 #title .btn { margin-top: 46px; font-size: 26px; padding: 18px 44px 20px; }
-#title .credit { position: absolute; bottom: 22px; font-size: 15px; color: rgba(74,51,38,.7); }
+#title .credit { position: absolute; bottom: 22px; font-size: 15px; color: rgba(74,51,38,.7); text-align: center; }
+#title .credit small, .madeBy { display: block; font-size: 12px; color: rgba(74,51,38,.55); margin-top: 3px; }
+.madeBy { flex-basis: 100%; text-align: center; margin: -2px 0 -10px; }
 
 /* ── 이야기 ── */
 #story { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; justify-content: center; padding: 0 18px calc(26px + env(safe-area-inset-bottom)); pointer-events: none; opacity: 0; transition: opacity .4s; }
@@ -380,7 +382,7 @@ button:focus-visible, input:focus-visible { outline: 4px solid rgba(59,168,240,.
 .phTxt h3 { font-size: clamp(30px, 3.4vw, 48px); font-weight: 900; line-height: 1.1; letter-spacing: -.03em; }
 .phTxt h3 span { color: #7CC8FF; }
 .phTxt p { margin-top: 14px; font-size: 16px; line-height: 1.6; opacity: .9; }
-.pchips { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 8px; padding: 0 22px 22px; pointer-events: none; }
+.pchips { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; padding: 0 22px 22px; pointer-events: none; }   /* 오른쪽 아래에 붙여요 */
 .pchips span { border: 1.5px solid rgba(255,255,255,.75); color: #fff; border-radius: 99px; padding: 6px 14px 7px; font-size: 13.5px; font-weight: 600; background: rgba(20,24,48,.55); }
 .pside { display: grid; grid-template-rows: auto 1fr; gap: 18px; }
 .papp { background: #fff; border-radius: 30px; padding: 22px; box-shadow: 0 6px 0 #F0DCC8; }
@@ -393,6 +395,7 @@ button:focus-visible, input:focus-visible { outline: 4px solid rgba(59,168,240,.
 .pslogan p { font-size: 22px; font-weight: 800; line-height: 1.35; }
 .pslogan hr { border: 0; border-top: 1.5px solid rgba(255,255,255,.7); margin: 16px 0; }
 .pslogan b { font-size: clamp(30px, 3vw, 42px); font-weight: 900; line-height: 1.12; letter-spacing: -.03em; }
+.pslogan b, .pslogan small { align-self: flex-end; text-align: right; }   /* 선 아래 글은 오른쪽에 */
 .pslogan small { margin-top: 18px; font-size: 13px; font-weight: 700; opacity: .85; }
 .pstate { margin-top: 18px; }
 .pposter { display: block; width: min(720px, 100%); margin: 30px auto 0; border-radius: 18px; box-shadow: 0 20px 40px -20px rgba(60,30,120,.45); cursor: zoom-in; }
