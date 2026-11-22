@@ -136,7 +136,8 @@ function update(dt) {
     G.player.position.set(G.pos.x, G.posY || 0, G.pos.z);
     const dy = ((G.yaw - G.player.rotation.y + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
     G.player.rotation.y += dy * Math.min(1, dt * 12);
-    animateCharacter(G.player, t, G.speed, { hop: G.playerHop || 0, squash: G.playerSquash || 0, hold: G.sunHold });
+    if (G.playerWave > 0) G.playerWave -= dt;
+    animateCharacter(G.player, t, G.speed, { hop: G.playerHop || 0, squash: G.playerSquash || 0, hold: G.sunHold, wave: G.playerWave > 0 });
     updateToolSwing(dt);
     updateHeadBucket(t);
   }
@@ -244,7 +245,7 @@ function updateToolSwing(dt) {
 function updateHeadBucket(t) {
   const b = G.tools && G.tools.bucket; if (!b || G.swingTool === 'bucket') return;
   // 언덕에서 햇빛을 모을 때는 양동이를 가방에 넣어 둬요
-  const has = !!G.flags.bucket && ['play', 'cutscene', 'complete'].includes(G.mode) && !G.onHill && !G.sunHold;
+  const has = !!G.flags.bucket && ['play', 'cutscene', 'complete'].includes(G.mode) && !G.onHill && !G.sunHold && !G.inPlaza;
   b.visible = has; if (!has) return;
   const full = G.inv.water > 0, walk = Math.min(1, G.speed / 5);
   b.position.set(0, (G.headY || 1.0) + Math.abs(Math.sin(t * 12)) * 0.03 * walk, 0);
