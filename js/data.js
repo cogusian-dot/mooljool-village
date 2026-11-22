@@ -195,7 +195,7 @@ function plantShort(seed) { return seed.short || seed.name; }
 //   예) 'https://mooljool-village-default-rtdb.asia-southeast1.firebasedatabase.app'
 //   비워 두면 '체험 모드'로 동작해요. 체험 모드에서는 같은 기기·같은 브라우저 안에서만 글이 보여요.
 const GUESTBOOK = {
-  dbUrl: '',
+  dbUrl: 'https://mooljool-village-default-rtdb.asia-southeast1.firebasedatabase.app',
   room: 'guestbook',   // 전시회마다 새 게시판을 쓰고 싶으면 이름만 바꾸세요 (예: 'gtec2026')
   maxNotes: 5000,      // 모아 둘 최근 글 수 ('방명록 모아보기' 표와 '몇 명 왔다감' 숫자에 쓰여요)
   maxLength: 40,       // 한 글의 최대 글자 수
