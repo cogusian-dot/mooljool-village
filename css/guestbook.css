@@ -21,25 +21,28 @@
 .gbTopBtns .btn { font-size: 18px; padding: 11px 20px 13px; }
 #gb .round { width: 52px; height: 52px; border-radius: 18px; font-size: 22px; background: #FFF6EA; box-shadow: inset 0 -4px 0 rgba(0,0,0,.08), 0 4px 0 #E3CDB6; }
 
-.gbBoardWrap { flex: 1; overflow: auto; width: min(1500px, 100%); margin: 0 auto; border-radius: 30px; position: relative;
+.gbBoardWrap { flex: 1; min-height: 0; overflow: hidden; width: min(1500px, 100%); margin: 0 auto; border-radius: 30px; position: relative;
   border: 14px solid #C98C55; box-shadow: inset 0 0 0 4px #A86F3F, inset 0 10px 30px rgba(70,35,10,.35), 0 10px 0 #A86F3F, 0 28px 50px -12px rgba(60,30,10,.5);
   background-color: #D6A26A;
   background-image: radial-gradient(rgba(150,95,45,.28) 1.2px, transparent 1.6px), radial-gradient(rgba(250,215,160,.35) 1.4px, transparent 1.8px);
   background-size: 13px 11px, 17px 19px; background-position: 0 0, 6px 8px; }
-.gbBoard { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 26px 22px; padding: 30px 26px 40px; align-items: start; }
+.gbBoard { position: absolute; inset: 0; }
 .gbEmpty { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; font-size: clamp(20px, 2.6vw, 30px); color: #5A3A22; line-height: 1.5; pointer-events: none; }
 
-.gbNote { position: relative; background: var(--paper, #FFF3A8); border-radius: 6px 6px 18px 18px; padding: 22px 16px 14px; transform: rotate(var(--rot, 0deg));
+.gbNote { position: absolute; width: var(--nw, 224px); height: var(--nh, 204px); overflow: hidden; cursor: pointer;
+  background: var(--paper, #FFF3A8); border-radius: 6px 6px 18px 18px; padding: 22px 16px 14px; transform: rotate(var(--rot, 0deg));
   box-shadow: inset 0 -5px 0 rgba(0,0,0,.05), 0 6px 0 rgba(120,70,30,.18), 0 14px 22px -8px rgba(70,35,10,.45); word-break: keep-all; overflow-wrap: anywhere;
   transition: transform .2s cubic-bezier(.3,1.6,.5,1); }
-.gbNote:hover { transform: rotate(0deg) scale(1.03); z-index: 2; }
+.gbNote:hover { transform: rotate(0deg) scale(1.03); z-index: 99990 !important; }
+.gbNote.front { transform: rotate(0deg) scale(1.08); z-index: 99991 !important; }
 .gbNote::before { content: ''; position: absolute; top: -9px; left: 50%; width: 20px; height: 20px; margin-left: -10px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #FF8A80, #E5322E 60%, #B71C1C); box-shadow: 0 3px 3px rgba(0,0,0,.3); }
+  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,.65), var(--pin, #E5322E) 45%, color-mix(in srgb, var(--pin, #E5322E) 70%, #000)); box-shadow: 0 3px 3px rgba(0,0,0,.3); z-index: 1; }
+.gbNote::before { top: 6px; }
 .gbNote.new { animation: gbPop .7s cubic-bezier(.3,1.6,.5,1), gbGlow 3s ease-out; }
 @keyframes gbPop { 0% { transform: translateY(-40px) scale(.6) rotate(-12deg); opacity: 0; } 60% { transform: translateY(4px) scale(1.06) rotate(var(--rot)); opacity: 1; } 100% { transform: rotate(var(--rot)); } }
 @keyframes gbGlow { 0%, 40% { box-shadow: 0 0 0 6px #FFF, 0 0 30px 10px rgba(255,201,74,.9); } 100% { box-shadow: inset 0 -5px 0 rgba(0,0,0,.05), 0 6px 0 rgba(120,70,30,.18), 0 14px 22px -8px rgba(70,35,10,.45); } }
 .gbNoteTop { display: flex; align-items: center; gap: 10px; }
-.gbThumb { position: relative; flex: none; width: 64px; height: 64px; border-radius: 20px; background: rgba(255,255,255,.7); display: grid; place-items: center; box-shadow: inset 0 -3px 0 rgba(0,0,0,.06); }
+.gbThumb { position: relative; flex: none; width: 58px; height: 58px; border-radius: 20px; background: rgba(255,255,255,.7); display: grid; place-items: center; box-shadow: inset 0 -3px 0 rgba(0,0,0,.06); }
 .gbThumb img { width: 100%; height: 100%; object-fit: contain; }
 .gbThumb em { position: absolute; right: -6px; bottom: -6px; font-style: normal; font-size: 24px; filter: drop-shadow(0 2px 0 rgba(0,0,0,.15)); }
 .gbThumb img + em { font-size: 22px; }
@@ -48,10 +51,10 @@
 .gbWho { min-width: 0; }
 .gbWho b { display: block; font-weight: 400; font-size: 21px; }
 .gbWho small { display: block; font-size: 13px; color: var(--ink2); }
-.gbMsg { font-size: 19px; line-height: 1.45; margin: 12px 0 10px; color: #4A3326; }
-.gbTag { display: inline-block; font-size: 13.5px; color: var(--leafD); background: rgba(255,255,255,.65); padding: 4px 10px 5px; border-radius: 99px; }
+.gbMsg { font-size: 18px; line-height: 1.4; margin: 10px 0 8px; color: #4A3326; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.gbTag { display: inline-block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13.5px; color: var(--leafD); background: rgba(255,255,255,.65); padding: 4px 10px 5px; border-radius: 99px; }
 .gbNote time { position: absolute; right: 14px; bottom: 12px; font-size: 12px; color: rgba(74,51,38,.55); }
-.gbMine { position: absolute; top: 8px; right: 10px; font-size: 12px; background: var(--orange); color: #fff; padding: 2px 8px 3px; border-radius: 99px; }
+.gbMine { position: absolute; top: 6px; right: 8px; font-size: 12px; background: var(--orange); color: #fff; padding: 2px 8px 3px; border-radius: 99px; }
 .gbNote.mine { box-shadow: 0 0 0 4px #fff, inset 0 -5px 0 rgba(0,0,0,.05), 0 14px 22px -8px rgba(70,35,10,.45); }
 
 /* ── 쓰기 창 ── */
@@ -77,15 +80,57 @@
 .gbcErr { min-height: 22px; margin-top: 8px; text-align: center; color: #D9422E; font-size: 15px; }
 .gbcBtns { display: flex; gap: 12px; margin-top: 6px; } .gbcBtns .btn { flex: 1; font-size: 19px; padding: 13px 10px 15px; } .gbcBtns .btn:first-child { flex: 0 0 30%; }
 
+.gbBoard.sm .gbNote { padding: 22px 10px 10px; } .gbBoard.sm .gbNote::before { top: 4px; width: 15px; height: 15px; margin-left: -7.5px; } .gbBoard.sm .gbThumb { width: 40px; height: 40px; border-radius: 13px; } .gbBoard.sm .gbThumb em { font-size: 17px; }
+.gbBoard.sm .gbThumb:not(:has(img)) em { font-size: 24px; } .gbBoard.sm .gbNoteTop { gap: 7px; }
+.gbBoard.sm .gbWho b { font-size: 16px; } .gbBoard.sm .gbWho small { font-size: 11px; } .gbBoard.sm .gbMsg { font-size: 14px; margin: 6px 0 5px; }
+.gbBoard.sm .gbTag { font-size: 11px; padding: 3px 7px 4px; } .gbBoard.sm time { display: none; } .gbBoard.sm .gbMine { font-size: 10px; top: 4px; right: 5px; }
+
+/* ── 귀퉁이 칠판: 몇 명 왔다감 ── */
+.gbChalk { position: absolute; right: 14px; bottom: 14px; z-index: 100000; transform: rotate(-3deg); pointer-events: none;
+  padding: 12px 22px 16px; border-radius: 8px; border: 7px solid #B57D4A;
+  background-color: #2E4A3C;
+  background-image: radial-gradient(ellipse 60% 40% at 28% 35%, rgba(255,255,255,.08), transparent 70%), radial-gradient(ellipse 45% 30% at 75% 70%, rgba(255,255,255,.06), transparent 70%),
+    linear-gradient(160deg, rgba(255,255,255,.04), rgba(0,0,0,.12));
+  box-shadow: inset 0 0 0 2px #8E5C30, inset 0 0 18px rgba(0,0,0,.45), 0 6px 0 #8E5C30, 0 14px 22px -6px rgba(40,20,5,.6); }
+.gbChalk p { font-family: var(--jua); font-size: clamp(22px, 2.4vw, 32px); line-height: 1.15; white-space: nowrap; letter-spacing: .02em;
+  color: rgba(255,255,255,.92); text-shadow: 0 0 1px #fff, 0 0 4px rgba(255,255,255,.35); filter: url(#gbChalkFx); }
+.gbChalk b { font-weight: 400; font-size: 1.45em; margin-right: .12em; display: inline-block; }
+.gbChalk.bump b { animation: gbChalkBump .9s cubic-bezier(.3,1.6,.5,1); }
+@keyframes gbChalkBump { 0% { transform: scale(.4); opacity: 0; } 55% { transform: scale(1.35); opacity: 1; } 100% { transform: scale(1); } }
+.gbChalkStick { position: absolute; left: 18px; bottom: -6px; width: 26px; height: 7px; border-radius: 3px; background: linear-gradient(#FFFFFF, #E4E0D8); box-shadow: 0 2px 2px rgba(0,0,0,.35); transform: rotate(4deg); }
+
+/* ── 방명록 모아보기 (표) ── */
+#gbList { position: fixed; inset: 0; z-index: 67; display: grid; place-items: center; background: rgba(60,40,20,.38); backdrop-filter: blur(4px);
+  padding: calc(14px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom)); opacity: 0; pointer-events: none; transition: opacity .3s; }
+#gbList.show { opacity: 1; pointer-events: auto; }
+.gbListCard { width: min(980px, 100%); height: 100%; display: flex; flex-direction: column; background: linear-gradient(180deg, #FFFDF9, #FFF4E6); border-radius: 28px; box-shadow: var(--clay); overflow: hidden; }
+.gbListTop { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 22px 14px; border-bottom: 3px dashed #EBD5BF; }
+.gbListTop h2 { font-weight: 400; font-size: clamp(22px, 2.6vw, 30px); }
+.gbListTop p { font-size: 15px; color: var(--ink2); margin-top: 4px; }
+.gbListTop .btn { flex: none; font-size: 17px; padding: 10px 18px 12px; }
+.gbListScroll { flex: 1; min-height: 0; overflow: auto; padding: 6px 18px 22px; }
+.gbTable { width: 100%; border-collapse: separate; border-spacing: 0 6px; font-size: 17px; }
+.gbTable th { position: sticky; top: 0; z-index: 1; background: #FFF4E6; font-weight: 400; color: var(--ink2); font-size: 15px; text-align: left; padding: 10px 12px 8px; }
+.gbTable td { background: #fff; padding: 11px 12px 12px; vertical-align: top; word-break: keep-all; overflow-wrap: anywhere; color: #4A3326; }
+.gbTable td:first-child { border-radius: 14px 0 0 14px; } .gbTable td:last-child { border-radius: 0 14px 14px 0; }
+.gbTable .no { width: 64px; text-align: center; color: var(--ink2); } .gbTable th.no { text-align: center; }
+.gbTable .nm { width: 120px; } .gbTable td.nm { font-weight: 700; }
+.gbTable .dt { width: 104px; color: var(--ink2); font-size: 14px; white-space: nowrap; }
+.gbTable tr.mine td { background: #FFF1D6; }
+.gbListEmpty { text-align: center; padding: 50px 10px; font-size: 19px; color: var(--ink2); }
+
 @media (max-width: 640px) {
   .gbTop { flex-wrap: wrap; padding: 10px 12px; } .gbPinBig { font-size: 28px; } .gbStatus { font-size: 12.5px; }
   .gbTopBtns .btn { font-size: 15px; padding: 9px 14px 11px; } #gb .round { width: 44px; height: 44px; }
-  .gbBoardWrap { border-width: 8px; border-radius: 22px; } .gbBoard { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px 12px; padding: 20px 12px 28px; }
-  .gbNote { padding: 18px 12px 12px; } .gbThumb { width: 48px; height: 48px; border-radius: 15px; } .gbWho b { font-size: 17px; } .gbMsg { font-size: 16px; }
+  .gbBoardWrap { border-width: 8px; border-radius: 22px; }
+  .gbTopBtns { width: 100%; } .gbTopBtns .btn { flex: 1; padding: 9px 8px 11px; }
+  .gbChalk { right: 8px; bottom: 8px; padding: 6px 12px 9px; border-width: 5px; } .gbChalkStick { width: 18px; height: 5px; left: 10px; }
+  .gbListTop { padding: 12px 14px 10px; } .gbListTop p { font-size: 13px; } .gbListScroll { padding: 4px 8px 16px; }
+  .gbTable { font-size: 15px; } .gbTable .no { width: 40px; padding-left: 4px; padding-right: 4px; } .gbTable .nm { width: 78px; } .gbTable th.dt, .gbTable td.dt { display: none; }
   .gbcLabel span { width: 46px; font-size: 16px; } .gbcRow { padding-left: 0; }
 }
 @media (max-height: 480px) {
-  #gb { padding: 8px; } .gbTop { margin-bottom: 8px; padding: 6px 12px; } .gbPinBig { display: none; } .gbTitle h2 { font-size: 20px; }
+  #gb { padding: 8px; } .gbTop { margin-bottom: 8px; padding: 6px 12px; } .gbPinBig { display: none; } .gbTitle h2 { font-size: 20px; } .gbListTop { padding: 8px 14px; }
   .gbcCard { padding: 14px 20px; } .gbcCard h3 { font-size: 22px; } .gbcPreview { margin-top: 8px; padding: 8px 12px; } .gbcLabel { margin-top: 8px; }
 }
 
