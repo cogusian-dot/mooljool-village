@@ -377,10 +377,13 @@ function makeBagMesh() {
   const strap = add(g, new THREE.TorusGeometry(0.42, 0.04, 6, 24, Math.PI), M('#8F5A2E'), 0, 0.22, 0);
   return g;
 }
-function makeBucketMesh() {
+function makeBucketMesh() { // 속이 빈 빨간 양동이 (위에서 보면 안쪽과 물이 보여요)
   const g = new THREE.Group();
-  add(g, cyl(0.28, 0.22, 0.42, 18), M('#E5322E'), 0, 0.21, 0);
-  const h = add(g, new THREE.TorusGeometry(0.27, 0.025, 6, 20, Math.PI), M('#888890'), 0, 0.42, 0);
+  add(g, new THREE.CylinderGeometry(0.28, 0.22, 0.42, 22, 1, true), M('#E5322E', { ds: true }), 0, 0.21, 0);
+  add(g, new THREE.CylinderGeometry(0.255, 0.2, 0.4, 22, 1, true), M('#A81C1A', { ds: true }), 0, 0.22, 0);
+  add(g, cyl(0.22, 0.22, 0.03, 22), M('#A81C1A'), 0, 0.03, 0);
+  const rim = add(g, new THREE.TorusGeometry(0.268, 0.024, 8, 26), M('#F0504A'), 0, 0.42, 0); rim.rotation.x = Math.PI / 2;
+  add(g, new THREE.TorusGeometry(0.27, 0.025, 6, 20, Math.PI), M('#888890'), 0, 0.42, 0);
   return g;
 }
 function makeLadderMesh(len) {
