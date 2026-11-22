@@ -96,7 +96,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initRenderer($('#gl'));
   loadTtamiModel(() => {
     buildWorld();
-    MP.init(); GB.init(); GB.build3D();
+    MP.init(); GB.init();   // 마을 안 3D 방명록 게시판은 게임 중엔 숨김 (방명록은 타이틀·완성 창에서만)
     G.ttami = makeTtami(TTAMI_SCALE); W.scene.add(G.ttami);
     W.colliders.push({ x: 0, z: 0, r: 2.25 });
     G.floatDrop = makeFloatDrop(); W.scene.add(G.floatDrop);
@@ -1244,7 +1244,7 @@ function goHome() {
   location.reload();
 }
 
-// 광장으로 한 번에 가기 (방명록 게시판과 다른 접속자들이 있는 곳)
+// 광장으로 한 번에 가기 (다른 접속자들이 모이는 곳)
 function goPlaza() {
   if (G.mode !== 'play' || G.busy || G.onHill) { SFX.play('deny'); if (G.mode === 'play') toast('지금은 광장으로 갈 수 없어요'); return; }
   SFX.play('whoosh'); burst('puff', V3(G.pos.x, 1, G.pos.z), 8);
@@ -1252,7 +1252,7 @@ function goPlaza() {
   G.cam.pos.set(G.pos.x - 3, 9, G.pos.z + 13);
   burst('puff', V3(G.pos.x, 1, G.pos.z), 8);
   G.playerHop = 0; tween(0.5, k => { G.playerHop = Math.sin(k * Math.PI) * 0.5; });
-  toast('광장에 왔어요! 방명록 게시판이 바로 앞에 있어요'); refreshObjective();
+  toast('광장에 왔어요! 다른 친구들을 만나 보세요'); refreshObjective();
 }
 
 // ═════════ 도움말 ═════════

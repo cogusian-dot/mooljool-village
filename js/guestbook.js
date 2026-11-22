@@ -77,11 +77,30 @@ const GB = (() => {
   <header class="gbTop">
     <div class="gbTitle"><span class="gbPinBig">📌</span><div><h2>물줄때 마을 방명록</h2>
       <p class="gbStatus" id="gbStatus"><i></i><span></span></p></div></div>
-    <div class="gbTopBtns"><button class="btn orange" id="gbWrite">✏️ 방명록 쓰기</button><button class="round" id="gbClose" aria-label="닫기">✕</button></div>
+    <div class="gbTopBtns"><button class="btn ghost" id="gbListBtn">📋 방명록 모아보기</button><button class="btn orange" id="gbWrite">✏️ 방명록 쓰기</button><button class="round" id="gbClose" aria-label="닫기">✕</button></div>
   </header>
   <div class="gbBoardWrap" id="gbBoardWrap">
     <div class="gbBoard" id="gbBoard"></div>
     <p class="gbEmpty" id="gbEmpty">아직 아무도 글을 남기지 않았어요.<br>첫 번째 방명록의 주인공이 되어 주세요!</p>
+    <div class="gbChalk" id="gbChalk" aria-live="polite"><p><b id="gbChalkNum">0</b>명 왔다감</p><i class="gbChalkStick"></i></div>
+  </div>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="gbChalkFx" x="-5%" y="-10%" width="110%" height="120%">
+    <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" seed="7" result="n"/>
+    <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 -2 1.62" result="grain"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="1.8" xChannelSelector="R" yChannelSelector="G" result="rough"/>
+    <feComposite in="rough" in2="grain" operator="in"/>
+  </filter></svg>
+</section>
+<section id="gbList" aria-label="방명록 모아보기" aria-hidden="true">
+  <div class="gbListCard">
+    <header class="gbListTop">
+      <div><h2>📋 방명록 모아보기</h2><p id="gbListSum"></p></div>
+      <button class="btn ghost" id="gbListBack">← 게시판으로</button>
+    </header>
+    <div class="gbListScroll">
+      <table class="gbTable"><thead><tr><th class="no">번호</th><th class="nm">이름</th><th>남긴 말</th><th class="dt">날짜</th></tr></thead><tbody id="gbListBody"></tbody></table>
+      <p class="gbListEmpty" id="gbListEmpty">아직 남겨진 방명록이 없어요.</p>
+    </div>
   </div>
 </section>
 <section id="gbCompose" aria-label="방명록 쓰기" aria-hidden="true">
@@ -100,7 +119,17 @@ const GB = (() => {
     const $$ = (s) => document.getElementById(s);
     ui = { gb: $$('gb'), board: $$('gbBoard'), empty: $$('gbEmpty'), status: $$('gbStatus'), wrap: $$('gbBoardWrap'),
       compose: $$('gbCompose'), preview: $$('gbcPreview'), seeds: $$('gbcSeeds'), name: $$('gbcName'), msg: $$('gbcMsg'),
-      colors: $$('gbcColors'), count: $$('gbcCount'), err: $$('gbcErr'), send: $$('gbcSend'), title: $$('gbcTitle') };
+      colors: $$('gbcColors'), count: $$('gbcCount'), err: $$('gbcErr'), send: $$('gbcSend'), title: $$('gbcTitle'),
+      chalk: $$('gbChalk'), chalkNum: $$('gbChalkNum'), list: $$('gbList'), listBody: $$('gbListBody'), listSum: $$('gbListSum'), listEmpty: $$('gbListEmpty') };
+    $$('gbListBtn').onclick = () => { SFX.play('click'); openList(); };
+    $$('gbListBack').onclick = () => { SFX.play('click'); closeList(); };
+    ui.board.addEventListener('click', (e) => {   // 밑에 깔린 쪽지를 누르면 맨 위로 꺼내 보기
+      const a = e.target.closest('.gbNote'); if (!a) return;
+      const was = a.classList.contains('front');
+      for (const f of ui.board.querySelectorAll('.gbNote.front')) f.classList.remove('front');
+      if (!was) { a.classList.add('front'); SFX.play('blip'); }
+    });
+    window.addEventListener('resize', () => { if (ui.gb.classList.contains('show')) { clearTimeout(layoutTimer); layoutTimer = setTimeout(() => renderBoard(), 150); } });
     $$('gbClose').onclick = () => { SFX.play('click'); close(); };
     $$('gbWrite').onclick = () => { SFX.play('click'); openCompose(G.seedId && G.completed.has(G.seedId) ? G.seedId : null); };
     $$('gbcCancel').onclick = () => { SFX.play('click'); closeCompose(); };
@@ -109,22 +138,23 @@ const GB = (() => {
     ui.msg.oninput = () => { ui.count.textContent = `${Array.from(ui.msg.value).length}/${CFG.maxLength}`; ui.count.classList.toggle('over', Array.from(ui.msg.value).length > CFG.maxLength); };
     COLORS.forEach((c, i) => { const b = el('button', 'gbcColor'); b.style.background = c; b.setAttribute('aria-label', '쪽지 색 ' + (i + 1)); b.onclick = () => { composeColor = i; SFX.play('blip'); renderCompose(); }; ui.colors.appendChild(b); });
     // 글 쓰는 동안 게임 조작키가 눌리지 않게
-    for (const node of [ui.gb, ui.compose]) node.addEventListener('keydown', (e) => {
+    for (const node of [ui.gb, ui.compose, ui.list]) node.addEventListener('keydown', (e) => {
       e.stopPropagation();
-      if (e.key === 'Escape') { if (ui.compose.classList.contains('show')) closeCompose(); else close(); }
+      if (e.key === 'Escape') escBack();
       if (e.key === 'Enter' && e.target === ui.msg && !e.shiftKey) { e.preventDefault(); send(); }
     });
-    window.addEventListener('keydown', (e) => { if (isOpen() && e.key === 'Escape') { if (ui.compose.classList.contains('show')) closeCompose(); else close(); } });
+    window.addEventListener('keydown', (e) => { if (isOpen() && e.key === 'Escape') escBack(); });
     setInterval(() => { if (ui.gb.classList.contains('show')) for (const t of ui.board.querySelectorAll('time')) t.textContent = relTime(+t.dataset.ts); }, 30000);
   }
 
-  function noteEl(key, n, isNew) {
+  function noteEl(key, n, isNew, pos) {
     const h = harvestInfo(n.seed), ch = charOf(n.char);
     const a = el('article', 'gbNote' + (isNew ? ' new' : '') + (myKeys.has(key) ? ' mine' : ''));
     a.dataset.key = key;
-    const seedNum = [...key].reduce((s, c) => s + c.charCodeAt(0), 0);
-    a.style.setProperty('--rot', ((seedNum % 7) - 3) * 0.9 + 'deg');
+    a.style.setProperty('--rot', pos.rot.toFixed(2) + 'deg');
     a.style.setProperty('--paper', COLORS[(n.color | 0) % COLORS.length]);
+    a.style.setProperty('--pin', PINS[pos.pin]);
+    a.style.left = pos.x + 'px'; a.style.top = pos.y + 'px'; a.style.zIndex = pos.z;
     const top = el('div', 'gbNoteTop');
     const th = el('span', 'gbThumb'); const url = h.seed ? thumb(n.seed) : null;
     if (url) { const img = el('img'); img.src = url; img.alt = h.name; th.appendChild(img); }
@@ -138,17 +168,74 @@ const GB = (() => {
     if (myKeys.has(key)) a.appendChild(el('span', 'gbMine', '내 글'));
     return a;
   }
-  let rendered = new Set();
+  // ─── 코르크 게시판: 빈자리부터 채우고, 꽉 차면 예전 쪽지 위에 새 쪽지를 겹쳐 붙여요 ───
+  const PINS = ['#E5322E', '#2F7DE1', '#F2B416', '#3FA34D', '#9B59D0'];
+  let rendered = null, layoutTimer = null, shownCount = -1;
+  function hashOf(str) { let h = 2166136261; for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+  function rand01(seed) { return () => { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  function slotOrder(layer, S) { const r = rand01(layer * 7919 + S * 31 + 3), a = [...Array(S).keys()]; for (let i = S - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } if (S > 1) { a.splice(a.indexOf(S - 1), 1); a.push(S - 1); } return a; }   // 칠판이 있는 오른쪽 아래 칸은 맨 마지막에
+  function chronological() { return sorted().reverse(); }   // 오래된 글 → 새 글
   function renderBoard(newKey) {
-    if (!ui || !ui.gb.classList.contains('show')) return;
-    const list = sorted();
-    const frag = document.createDocumentFragment(); const now = new Set();
-    for (const [k, n] of list) { now.add(k); frag.appendChild(noteEl(k, n, rendered.size > 0 && !rendered.has(k))); }
+    if (!ui) return;
+    renderChalk();
+    if (!ui.gb.classList.contains('show')) return;
+    const all = chronological();
+    const Wd = ui.wrap.clientWidth, Ht = ui.wrap.clientHeight;
+    const small = Wd < 640 || Ht < 430;
+    const NW = small ? 150 : 224, NH = small ? 150 : 204, pad = small ? 10 : 18;
+    ui.board.classList.toggle('sm', small);
+    ui.board.style.setProperty('--nw', NW + 'px'); ui.board.style.setProperty('--nh', NH + 'px');
+    const cols = Math.max(1, Math.floor((Wd - pad * 2) / (NW * 0.92))), rows = Math.max(1, Math.floor((Ht - pad * 2) / (NH * 0.9)));
+    const S = cols * rows;
+    const cx = (c) => cols === 1 ? Wd / 2 : pad + NW / 2 + (Wd - pad * 2 - NW) * c / (cols - 1);
+    const cy = (r) => rows === 1 ? Ht / 2 : pad + NH / 2 + (Ht - pad * 2 - NH) * r / (rows - 1);
+    const from = Math.max(0, all.length - S * 3);   // 세 겹보다 아래는 완전히 덮여서 그리지 않아요
+    const orders = {};
+    const frag = document.createDocumentFragment();
+    for (let i = from; i < all.length; i++) {
+      const [k, n] = all[i], layer = Math.floor(i / S);
+      const slot = (orders[layer] || (orders[layer] = slotOrder(layer, S)))[i % S];
+      const r = rand01(hashOf(k)), spread = layer ? 0.34 : 0.1;
+      let x = cx(slot % cols) - NW / 2 + (r() * 2 - 1) * NW * spread, y = cy(Math.floor(slot / cols)) - NH / 2 + (r() * 2 - 1) * NH * spread;
+      x = Math.min(Math.max(4, x), Wd - NW - 4); y = Math.min(Math.max(6, y), Ht - NH - 4);
+      const pos = { x, y, z: i + 1, rot: (r() * 2 - 1) * (layer ? 7 : 4), pin: Math.floor(r() * PINS.length) };
+      frag.appendChild(noteEl(k, n, !!rendered && !rendered.has(k), pos));
+    }
     ui.board.replaceChildren(frag);
-    ui.empty.style.display = list.length ? 'none' : '';
-    if (newKey && rendered.size && !rendered.has(newKey)) SFX.play('plop');
-    rendered = now;
+    ui.empty.style.display = all.length ? 'none' : '';
+    if (newKey && rendered && !rendered.has(newKey)) SFX.play('plop');
+    rendered = new Set(notes.keys());
+    if (ui.list.classList.contains('show')) renderList();
   }
+  // 칠판: 지금까지 방명록을 남긴 사람 수
+  function renderChalk() {
+    const n = notes.size;
+    if (n === shownCount) return;
+    const grew = shownCount >= 0 && n > shownCount;
+    shownCount = n; ui.chalkNum.textContent = n.toLocaleString('ko-KR');
+    if (grew) { ui.chalk.classList.remove('bump'); void ui.chalk.offsetWidth; ui.chalk.classList.add('bump'); }
+  }
+
+  // ─── 방명록 모아보기 (표) ───
+  function fmtDate(ts) { if (!ts) return ''; const d = new Date(ts); return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`; }
+  function renderList() {
+    const all = chronological(), frag = document.createDocumentFragment();
+    for (let i = all.length - 1; i >= 0; i--) {
+      const [k, n] = all[i], tr = el('tr', myKeys.has(k) ? 'mine' : '');
+      tr.append(el('td', 'no', String(i + 1)), el('td', 'nm', trimTo(clean(n.name), 8)), el('td', 'msg', trimTo(clean(n.msg), 60)), el('td', 'dt', fmtDate(n.ts)));
+      frag.appendChild(tr);
+    }
+    ui.listBody.replaceChildren(frag);
+    ui.listEmpty.style.display = all.length ? 'none' : '';
+    ui.listSum.textContent = `지금까지 ${all.length.toLocaleString('ko-KR')}명이 남겼어요 · 최근 글이 위에 있어요`;
+  }
+  function openList() {
+    renderList();
+    ui.list.classList.add('show'); ui.list.setAttribute('aria-hidden', 'false');
+    ui.list.querySelector('.gbListScroll').scrollTop = 0;
+  }
+  function closeList() { if (!ui) return; ui.list.classList.remove('show'); ui.list.setAttribute('aria-hidden', 'true'); }
+  function escBack() { if (ui.compose.classList.contains('show')) closeCompose(); else if (ui.list.classList.contains('show')) closeList(); else close(); }
   function renderStatus() {
     if (!ui) return;
     const status = statusOf(), presence = presenceCount();
@@ -161,19 +248,18 @@ const GB = (() => {
   function open(opts = {}) {
     if (!ui) buildUI();
     ui.gb.classList.add('show'); ui.gb.setAttribute('aria-hidden', 'false');
-    rendered = new Set(); renderBoard(); rendered = new Set(notes.keys()); renderStatus();
-    ui.wrap.scrollTop = 0;
+    rendered = null; renderBoard(); renderStatus();
     SFX.play('open');
     if (opts.compose) openCompose(opts.seedId || null);
     return new Promise(res => { openResolve = res; });
   }
   function close() {
     if (!ui) return;
-    closeCompose(true);
+    closeCompose(true); closeList();
     ui.gb.classList.remove('show'); ui.gb.setAttribute('aria-hidden', 'true');
     const r = openResolve; openResolve = null; r && r();
   }
-  function isOpen() { return !!ui && (ui.gb.classList.contains('show') || ui.compose.classList.contains('show')); }
+  function isOpen() { return !!ui && (ui.gb.classList.contains('show') || ui.compose.classList.contains('show') || ui.list.classList.contains('show')); }
 
   function seedChoices() {
     const ids = [...(G.completed || [])];
@@ -223,7 +309,7 @@ const GB = (() => {
       myKeys.add(key); lastPost = Date.now(); try { localStorage.setItem('mjgb:last', String(lastPost)); } catch (e) { }
       ui.msg.value = ''; closeCompose();
       if (!ui.gb.classList.contains('show')) open();
-      renderBoard(); ui.wrap.scrollTop = 0;
+      renderBoard();
       SFX.play('success');
     } catch (e) {
       console.warn('[방명록] 글 붙이기 실패', e);

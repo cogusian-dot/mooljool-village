@@ -197,7 +197,7 @@ function plantShort(seed) { return seed.short || seed.name; }
 const GUESTBOOK = {
   dbUrl: '',
   room: 'guestbook',   // 전시회마다 새 게시판을 쓰고 싶으면 이름만 바꾸세요 (예: 'gtec2026')
-  maxNotes: 300,       // 게시판에 보여 줄 최근 글 수
+  maxNotes: 5000,      // 모아 둘 최근 글 수 ('방명록 모아보기' 표와 '몇 명 왔다감' 숫자에 쓰여요)
   maxLength: 40,       // 한 글의 최대 글자 수
   cooldownSec: 30,     // 같은 기기에서 다시 쓰기까지 기다리는 시간(초)
 };
