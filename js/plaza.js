@@ -158,6 +158,90 @@ const PZ = (() => {
     col(x - 0.9, z, 0.3); col(x + 0.9, z, 0.3);
   }
 
+  // ─── 광장 한가운데 땀땀이 (E: 같이 춤추기 / 축포 팡!) ───
+  const TT_S = 18;
+  const tt = { wrap: null, pot: null, r: 1.6, act: null, popper: null };
+  function plazaSeed() { return G.seedId && G.completed && G.completed.has(G.seedId) ? G.seedId : 'sunflower'; }
+  function buildTtami(live) {
+    tt.wrap = new THREE.Group(); tt.wrap.position.copy(at(0, 0)); live.add(tt.wrap);
+    tt.pot = makeTtami(TT_S); tt.wrap.add(tt.pot);
+    const box = new THREE.Box3().setFromObject(tt.pot); tt.r = Math.max(1.2, (box.max.x - box.min.x) / 2);
+    setTtamiPlant(tt.pot, plazaSeed(), 3, PLANT_SCALE_BIG * TT_S / 18);
+    if (tt.pot.userData.drop) tt.pot.userData.dropTarget = 0;
+    col(0, 0, tt.r + 0.3);
+  }
+  // 춤: 0~1.25 좌우 콩콩 · 1.25~2.5 한 바퀴 · 2.5~3.75 엉덩이 씰룩 · 3.75~5 점프 세 번
+  function danceAt(k) {
+    const t = k * 5, seg = Math.floor(t / 1.25), u = (t % 1.25) / 1.25;
+    let x = 0, y = 0, spin = 0, tilt = 0, arms = 0;
+    if (seg === 0) { x = Math.sin(u * Math.PI * 4) * 0.35; y = Math.abs(Math.sin(u * Math.PI * 4)) * 0.25; tilt = Math.sin(u * Math.PI * 4) * 0.15; arms = 1; }
+    else if (seg === 1) { spin = u * Math.PI * 2; y = Math.sin(u * Math.PI) * 0.35; arms = 0.6; }
+    else if (seg === 2) { tilt = Math.sin(u * Math.PI * 8) * 0.3; y = Math.abs(Math.sin(u * Math.PI * 8)) * 0.08; arms = 0.3; }
+    else if (seg < 4) { y = Math.abs(Math.sin(u * Math.PI * 3)) * 0.7; arms = 1; }
+    return { x, y, spin, tilt, arms };
+  }
+  function playerFace() { G.yaw = Math.atan2(PLAZA.x - G.pos.x, PLAZA.z - G.pos.z); }
+  async function playWithTtami() {
+    if (tt.act) return;
+    const kind = Math.random() < 0.5 ? 'dance' : 'popper';
+    playerFace(); G.speed = 0;
+    if (kind === 'dance') {
+      G.yaw = 0; tt.act = { kind, start: G.t, yaw0: 0 };   // 화면 쪽을 보고 땀땀이와 나란히 춤춰요
+      SFX.play('happy'); toast('💃 땀땀이랑 같이 춤춰요!');
+      for (let i = 0; i < 5; i++) setTimeout(() => { if (tt.act && tt.act.kind === 'dance') SFX.play(i % 2 ? 'boing' : 'blip', 1 + i * 0.08); }, i * 1000);
+      await wait(5000);
+    } else {
+      // 흙에 축포를 꽂고 → 팡!
+      const a = new THREE.Vector3(); tt.pot.userData.anchor.getWorldPosition(a);
+      const pop = new THREE.Group(); pop.position.set(PLAZA.x + tt.r * 0.42, a.y - 0.05, PLAZA.z + tt.r * 0.38); pop.rotation.set(0.35, 0, -0.35);
+      const body = add(pop, new THREE.ConeGeometry(0.32, 1.1, 16), M('#FF5A8A', { rim: 0.2 }), 0, 0.55, 0); body.rotation.x = Math.PI;
+      for (let i = 0; i < 3; i++) add(pop, new THREE.TorusGeometry(0.22 - i * 0.06, 0.035, 6, 18), M(['#FFD23A', '#6BC4F0', '#FFFFFF'][i]), 0, 0.85 - i * 0.22, 0).rotation.x = Math.PI / 2;
+      add(pop, cyl(0.04, 0.04, 0.25, 6), M('#FFFFFF'), 0, -0.05, 0);
+      pop.scale.setScalar(0.01); W.scene.add(pop); tt.popper = pop;
+      tt.act = { kind, start: G.t, popAt: G.t + 1.1, popped: false };
+      SFX.play('tok'); toast('🎉 땀땀이 흙에 축포를 꽂았어요!');
+      await tween(0.35, k => pop.scale.setScalar(Math.max(0.01, k)), ease.back);
+      await wait(800);
+      const top = pop.localToWorld(new THREE.Vector3(0, 1.1, 0));
+      burst('confetti', top, 70); burst('sparkle', top, 26); burst('confetti', top.clone().add(V3(0, 1, 0)), 30);
+      SFX.play('success'); SFX.play('plop'); G.shake = 0.25;
+      tt.act.popped = true; G.yaw = 0; toast('팡! 🎊 짝짝짝');
+      tween(0.3, k => { const q = 1 + Math.sin(k * Math.PI) * 0.4; pop.scale.set(q, 1 / q, q); });
+      for (let i = 0; i < 6; i++) setTimeout(() => SFX.play('tok'), 300 + i * 380);
+      await wait(2800);
+      await tween(0.3, k => pop.scale.setScalar(Math.max(0.01, 1 - k)));
+      W.scene.remove(pop); tt.popper = null;
+    }
+    tt.act = null;
+    if (G.player) { const b = G.player.userData.body; b.rotation.z = 0; b.position.x = 0; }
+    tt.wrap.position.copy(at(0, 0)); tt.wrap.rotation.set(0, 0, 0); G.playerHop = 0;
+  }
+  function updateTtamiPlay(dt, t) {
+    if (!tt.pot) return;
+    updateTtami(tt.pot, dt, t);
+    const A = tt.act;
+    if (!A) { tt.wrap.position.y = Math.abs(Math.sin(t * 1.6)) * 0.04; return; }
+    const u = G.player && G.player.userData;
+    if (A.kind === 'dance') {
+      const k = Math.min(1, (G.t - A.start) / 5), d = danceAt(k);
+      // 땀땀이
+      tt.wrap.position.set(PLAZA.x + d.x, d.y, PLAZA.z); tt.wrap.rotation.set(0, d.spin, d.tilt);
+      // 플레이어도 똑같이
+      if (u) {
+        G.playerHop = d.y; G.yaw = A.yaw0 + d.spin;
+        u.body.rotation.z = d.tilt; u.body.position.x = d.x * 0.6;
+        const hy = 0.52 + d.arms * (0.45 + Math.abs(Math.sin(t * 10)) * 0.15);
+        u.hands[0].position.y = hy; u.hands[1].position.y = hy;
+      }
+    } else if (u) {
+      // 박수: 양손을 가슴 앞에서 짝짝
+      const clap = A.popped ? Math.abs(Math.sin((G.t - A.start) * 13)) : 0.6;
+      const hx = 0.1 + clap * 0.32;
+      u.hands[0].position.set(-hx, 0.78, 0.38); u.hands[1].position.set(hx, 0.78, 0.38);
+      if (A.popped) { G.playerHop = Math.abs(Math.sin((G.t - A.start) * 6.5)) * 0.12; tt.wrap.position.y = Math.abs(Math.sin((G.t - A.start) * 6.5)) * 0.15; }
+    }
+  }
+
   // ─── 짓기 ───
   function build() {
     if (built) return; built = true;
@@ -171,6 +255,7 @@ const PZ = (() => {
     const yard = add(s, roundedBox(15, 0.04, 5, 0.02, 1), M('#C47656'), PLAZA.x, 0.01, PLAZA.z - 14.2, false); yard.receiveShadow = true;
     const live = new THREE.Group(); s.add(live);   // 움직이는 것(시계 바늘·깃발·풍선·노점 화분)은 합치지 않아요
     hall(decor, live);
+    buildTtami(live);
     // 방명록 게시판 (회관 왼쪽)
     GB.build3D(at(-9.6, -12.2), at(0, -2));
     flagPole(decor, live, 8.4, -13.8);
@@ -221,6 +306,7 @@ const PZ = (() => {
   }
   function update(dt, t) {
     if (!built) return;
+    updateTtamiPlay(dt, t);
     const here = inPlaza();
     for (const b of anim.balloons) { b.g.position.y = Math.sin(t * 1.3 + b.ph) * 0.15; b.g.rotation.z = Math.sin(t * 0.9 + b.ph) * 0.05; }
     for (const f of anim.flags) { const a = f.m.geometry.attributes.position, arr = a.array; for (let i = 0; i < arr.length; i += 3) { const x = f.base[i]; arr[i + 2] = Math.sin(t * 4 - x * 2.4) * 0.12 * x; } a.needsUpdate = true; }
@@ -307,6 +393,7 @@ const PZ = (() => {
     SFX.play('whoosh'); burst('confetti', V3(G.pos.x, 3, G.pos.z - 3), 40);
     anim.fwT = 0.4;
     toast(source === 'setup' ? '광장에 왔어요! 게시판에 방명록을 남기고 친구들과 놀아요' : '광장에 왔어요! 게시판에서 수확을 자랑해 보세요');
+    if (tt.pot) setTtamiPlant(tt.pot, plazaSeed(), 3, PLANT_SCALE_BIG * TT_S / 18);
     refreshPlazaBtn(); refreshObjective(); MP.syncAll();
   }
   function leave() {
@@ -328,6 +415,7 @@ const PZ = (() => {
   function interactables(list) {
     if (GB.board3D) list.push({ id: 'board', pos: GB.board3D.front, r: 3.4, h: 6.4, label: '방명록 쓰기', act: () => GB.open({ compose: true, seedId: G.seedId && G.completed.has(G.seedId) ? G.seedId : null }) });
     // 마을회관 문 → 땀땀이 알아보기 (패키지 영상 → 설명 페이지). 닫으면 광장으로 돌아와요
+    if (tt.pot) list.push({ id: 'ttami', pos: at(0, 0), r: tt.r + 2.8, h: 6.4, label: '땀땀이와 놀기', act: playWithTtami });
     list.push({ id: 'hall', pos: at(0, -14.1), r: 2.8, h: 4.6, label: '마을회관에서 땀땀이 알아보기', act: async () => openInfo() });
     list.push({ id: 'exit', pos: at(0, 13.4), r: 2.2, h: 2.4, label: from === 'setup' ? '씨앗 심으러 마을로' : '마을로 돌아가기', act: async () => leave() });
   }
