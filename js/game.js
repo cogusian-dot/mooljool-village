@@ -17,7 +17,7 @@ const G = {
   name: '', charId: null, seedId: null, completed: new Set(),
   player: null, pos: SPAWN.clone(), yaw: Math.PI, speed: 0,
   ttami: null, floatDrop: null, npcs: [], pickups: [], particles: [], tweens: [],
-  inv: { apple: 0, water: 0, crystal: 0, nutrient: 0 }, flags: {}, posY: 0, onHill: false,
+  inv: { apple: 0, water: 0, crystal: 0, nutrient: 0 }, flags: {}, posY: 0, onHill: false, inPlaza: false,
   stage: 0, reqIdx: 0, given: { w: 0, n: 0 }, requestActive: false,
   keys: {}, joy: { x: 0, y: 0 }, busy: false,
   cam: { pos: V3(0, 14, 22), look: V3(0, 1, 0), mode: 'follow', tPos: V3(), tLook: V3(), k: 3 },
@@ -141,6 +141,7 @@ function update(dt) {
     updateHeadBucket(t);
   }
   updateNPCs(dt, t);
+  PZ.update(dt, t);
   MP.update(dt, t);
   updateFloatDrop(dt, t);
   updatePickups(dt);
@@ -215,6 +216,7 @@ function movePlayer(dt) {
     for (const c of W.colliders) pushOut(c.x, c.z, c.r + 0.45);
     for (const n of G.npcs) { pushOut(n.root.position.x, n.root.position.z, 0.95); pushOut(n.pot.position.x, n.pot.position.z, 0.85); }
   }
+  if (G.inPlaza) { PZ.clampWalk(); return; }
   const d = Math.hypot(G.pos.x, G.pos.z);
   if (d > W.BOUND) { G.pos.x *= W.BOUND / d; G.pos.z *= W.BOUND / d; }
 }
@@ -565,6 +567,7 @@ async function finishPlant() {
 function interactables() {
   const list = [];
   if (!G.player) return list;
+  if (G.inPlaza) { for (const it of MP.interactables()) list.push(it); PZ.interactables(list); return list; }
   if (G.onHill) {
     const has = G.inv.crystal > 0;
     list.push({ id: 'hilltop', pos: V3(G.pos.x, 0, G.pos.z), r: 99, h: G.posY + 2.5, label: has ? '햇빛 담기' : '내려가기', act: has ? gatherSun : climbDown });
@@ -586,8 +589,6 @@ function interactables() {
   const h = W.refs.hill;
   list.push({ id: 'hill', pos: h.base, r: 2.8, h: 3.0, label: G.flags.ladderPlaced ? '올라가기' : G.flags.ladder ? '사다리 놓기' : '살펴보기', act: actHill });
   for (const n of G.npcs) list.push({ id: 'npc', pos: n.root.position, r: 2.4, h: 1.9, label: '말 걸기', act: () => talkNPC(n) });
-  for (const it of MP.interactables()) list.push(it);
-  if (GB.board3D) list.push({ id: 'board', pos: GB.board3D.front, r: 3.2, h: 6.4, label: '방명록 보기', act: () => GB.open({ fromVillage: true }) });
   return list;
 }
 function nearestInteractable() {
@@ -710,7 +711,7 @@ async function climbDown() {
 }
 async function talkTtami() {
   facePoint(V3(0, 0, 0));
-  if (G.stage >= 3) { await say('ttami', '고마워;; 덕분에 활짝 자랐어;;'); return; }
+  if (G.stage >= 3) { await say('ttami', '고마워;; 덕분에 활짝 자랐어;;'); showComplete(); return; }
   if (!G.requestActive) { await say('ttami', '지금 쑥쑥 자라는 중이야;; 잠깐만;;'); return; }
   const ok = await giveToTtami();
   if (ok) { await say('ttami', '물방울이… 꽉 찼어;;!'); await completeStage(); return; }
@@ -846,6 +847,7 @@ async function carpenterWork(n) {
 
 // ═════════ 목표 ═════════
 function objective() {
+  if (G.inPlaza) return G.mode === 'play' ? PZ.objective() : null;
   if (G.mode !== 'play' || G.stage >= 3) return null;
   const tr = W.refs.appleTree, h = W.refs.hill;
   const npc = (role) => G.npcs.find(n => n.role === role);
@@ -886,6 +888,7 @@ function objective() {
   return { t: '땀땀이에게 물과 양분을 가져다줘요!', target: V3(0, 0, 0), h: 8.6 };
 }
 function refreshObjective() {
+  refreshPlazaBtn();
   const o = objective();
   const el = $('#objective');
   if (!o) { el.classList.remove('show'); G.obj = null; return; }
@@ -1156,7 +1159,7 @@ function renderSetup() {
 function validateSetup() {
   $('#nameNext').disabled = !$('#nameInput').value.trim();
   $('#charNext').disabled = !G.charId;
-  $('#seedGo').disabled = !G.seedId;
+  $('#seedGo').disabled = !G.seedId; $('#seedPlaza').disabled = !G.seedId || !G.charId || !G.name;
   const c = CHAR_BY_ID[G.charId];
   $('#charPick').innerHTML = c ? `<img src="${assetURL('assets/chars/' + c.img + '.webp')}" alt=""><span>${J(c.name, '이', '가')} 함께할게요!</span>` : '<span>함께할 요정을 골라 주세요</span>';
 }
@@ -1251,15 +1254,12 @@ function goHome() {
   location.reload();
 }
 
-// 광장으로 한 번에 가기 (다른 접속자들이 모이는 곳)
+// ⛲ 버튼: 식물을 다 키운 뒤에만 광장으로 갈 수 있어요. 광장에서는 나가기
 function goPlaza() {
-  if (G.mode !== 'play' || G.busy || G.onHill) { SFX.play('deny'); if (G.mode === 'play') toast('지금은 광장으로 갈 수 없어요'); return; }
-  SFX.play('whoosh'); burst('puff', V3(G.pos.x, 1, G.pos.z), 8);
-  G.pos.set(8.6, 0, -3.2); G.posY = 0; G.speed = 0; G.yaw = Math.atan2(12 - 8.6, -4.5 + 3.2);
-  G.cam.pos.set(G.pos.x - 3, 9, G.pos.z + 13);
-  burst('puff', V3(G.pos.x, 1, G.pos.z), 8);
-  G.playerHop = 0; tween(0.5, k => { G.playerHop = Math.sin(k * Math.PI) * 0.5; });
-  toast('광장에 왔어요! 다른 친구들을 만나 보세요'); refreshObjective();
+  if (G.inPlaza) { if (G.mode === 'play' && !G.busy) { SFX.play('click'); PZ.leave(); } return; }
+  const ok = G.completed.size > 0 && G.stage >= 3;
+  if (!ok || G.mode !== 'play' || G.busy || G.onHill) { SFX.play('deny'); if (G.mode === 'play') toast(ok ? '지금은 광장으로 갈 수 없어요' : '식물을 끝까지 키우면 광장에 갈 수 있어요'); return; }
+  PZ.enter('village');
 }
 
 // ═════════ 도움말 ═════════
@@ -1280,7 +1280,8 @@ function buildUI() {
   $('#seedGo').onclick = startGame;
   $('#cpLearn').onclick = openTtamiInfo;
   $('#cpReplay').onclick = replay;
-  $('#cpBrag').onclick = () => { SFX.play('click'); GB.open({ compose: true, seedId: G.seedId }); };
+  $('#cpBrag').onclick = () => { SFX.play('click'); PZ.enter('complete'); };
+  $('#seedPlaza').onclick = () => { if (!G.seedId || !G.charId || !G.name) return; SFX.play('click'); PZ.enter('setup'); };
   $('#titleBoard').onclick = () => { SFX.init(); SFX.play('click'); GB.open(); };
   $('#btnSound').onclick = () => { SFX.init(); SFX.setMuted(!SFX.muted); $('#btnSound').classList.toggle('off', SFX.muted); SFX.play('click'); };
   $('#btnMusic').onclick = () => { SFX.init(); SFX.setBgm(!SFX.bgm); $('#btnMusic').classList.toggle('off', !SFX.bgm); SFX.play('click'); };
