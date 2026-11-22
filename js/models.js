@@ -300,36 +300,48 @@ function buildAccessory(acc, top, body, deco, bm) {
       const t2 = add(sh, new THREE.ConeGeometry(0.11, 0.3, 12), blue, 0.76, -0.06, -0.05); t2.scale.z = 0.35; t2.rotation.z = -2.3;
       break;
     }
-    case 'bamti': { // 밤티: 긴 갈색 머리 · 작은 날개 · 흰 옷
-      const hair = M('#A65A3A', { rim: 0.1 }), hair2 = M('#BF7650'), wing = M('#F3EDE2'), cloth = M('#F4EFE6'), gold = M('#E8B93A'), dk = M('#4A4540');
-      ell(top, hair, 0.56, 0.26, 0.5, 0, -0.03, -0.06, 22);
-      for (const s of [-1, 1]) {
-        ell(top, hair2, 0.24, 0.12, 0.3, s * 0.2, 0.1, 0.02, 14).rotation.z = -s * 0.3;
-        const bang = ell(deco, hair, 0.16, 0.34, 0.12, s * 0.45, 0.87, 0.28, 14); bang.rotation.z = s * 0.5;
-        ell(deco, hair, 0.22, 0.44, 0.38, s * 0.6, 0.6, -0.06, 16);
-        ell(deco, hair2, 0.1, 0.4, 0.2, s * 0.7, 0.58, 0.08, 12);
-        ell(deco, hair, 0.26, 0.3, 0.36, s * 0.66, 0.3, -0.02, 16);
-        ell(deco, hair, 0.14, 0.12, 0.2, s * 0.84, 0.17, 0.06, 12);
-        const w = ell(top, wing, 0.17, 0.075, 0.05, s * 0.42, 0.2, 0.12, 12); w.rotation.z = s * 0.3;
-        ell(top, wing, 0.07, 0.07, 0.05, s * 0.3, 0.16, 0.14, 10);
+    case 'bamti': { // 밤티: 가운데 가르마 · 얼굴 옆으로 흘러내리는 긴 웨이브 머리 · 작은 날개 · 아랫몸을 감싼 흰 옷
+      const hair = M('#A65A3A', { rim: 0.1 }), hair2 = M('#8E4A2E'), wing = M('#FBF7F0', { rim: 0.08 }), cloth = M('#F7F3EC', { rim: 0.06 }), gold = M('#E8B93A', { r: 0.4 }), dk = M('#6B6560');
+      const wave = (pts0, r, mat) => add(deco, tube(pts0, r, 24, 8), mat);
+      // 머리 윗부분: 가운데 가르마 (이마는 드러나게)
+      for (const sd of [-1, 1]) {
+        const cap = ell(top, hair, 0.34, 0.17, 0.47, sd * 0.24, 0.0, -0.01, 20); cap.rotation.z = -sd * 0.22;
+        // 가르마에서 이마 위를 지나 옆으로 넘어가는 앞머리 다발
+        for (const [z0, y0] of [[0.36, 1.06], [0.2, 1.1]]) wave([[sd * 0.04, y0, z0], [sd * 0.24, y0 - 0.02, z0 + 0.05], [sd * 0.44, 0.96, z0 + 0.03], [sd * 0.56, 0.8, z0 - 0.02]], 0.06, hair);
+        // 얼굴 옆으로 흘러내리는 웨이브 머리 (안쪽을 채우는 덩어리 + 굵은 웨이브 다발)
+        ell(deco, hair, 0.11, 0.42, 0.4, sd * 0.56, 0.6, -0.06, 18);
+        ell(deco, hair, 0.12, 0.16, 0.36, sd * 0.6, 0.22, -0.06, 14);
+        [0.26, 0.13, 0.0, -0.13, -0.26, -0.38].forEach((z0, i) => {
+          const len = 0.82 + (i % 2) * 0.1, ph = i * 1.3, pts0 = [];
+          for (let k = 0; k <= 6; k++) { const t = k / 6; pts0.push([sd * (0.55 + t * 0.06 + Math.sin(t * Math.PI * 3 + ph) * 0.035), 0.96 - t * len, z0 + Math.cos(t * Math.PI * 2 + ph) * 0.03]); }
+          wave(pts0, 0.085 - (i % 2) * 0.01, i % 2 ? hair2 : hair);
+          const e = pts0[6]; ell(deco, i % 2 ? hair2 : hair, 0.07, 0.06, 0.07, e[0] - sd * 0.03, e[1] + 0.01, e[2], 10);
+        });
+        // 날개 장식 (머리 양쪽 위)
+        const wg = new THREE.Group(); wg.position.set(sd * 0.4, 0.17, -0.02); wg.rotation.z = sd * -0.45; wg.rotation.y = sd * 0.35; top.add(wg);
+        [[0.0, 0.0, 0.17, 0.085], [sd * 0.13, 0.07, 0.14, 0.07], [sd * 0.24, 0.13, 0.1, 0.055]].forEach(([wx, wy, rx, ry]) => ell(wg, wing, rx, ry, 0.06, wx, wy, 0, 14));
+        ell(wg, wing, 0.065, 0.065, 0.065, sd * -0.12, -0.04, 0.02, 12);
         // 반쯤 감긴 눈
-        dec(deco, M('#F6E7C8'), 0.085, 0.05, 0.02, s * 0.2 - 0.02, 0.655, 0.0);
-        dec(deco, M('#3A2A22'), 0.055, 0.055, 0.026, s * 0.2 + 0.015, 0.66, 0.004);
-        dec(deco, white, 0.012, 0.012, 0.012, s * 0.2 + 0.035, 0.675, 0.028, 6);
-        add(deco, roundedBox(0.21, 0.04, 0.03, 0.014, 1), M('#9A5A3A'), s * 0.2, 0.705, faceZ(0.2, 0.705) + 0.02);
-        // 수염 자국
-        for (const [fx, fy, rz] of [[0.07, 0.56, 0.5], [0.12, 0.56, 0.5], [0.16, 0.5, 0.4]]) { const q = add(deco, roundedBox(0.012, 0.035, 0.012, 0.005, 1), M('#3A2A22'), s * fx, fy, faceZ(fx, fy) + 0.004); q.rotation.z = s * rz; }
+        dec(deco, M('#F6E7C8'), 0.08, 0.045, 0.02, sd * 0.2, 0.655, 0.0);
+        dec(deco, M('#2E211B'), 0.05, 0.045, 0.026, sd * 0.2 + 0.01, 0.648, 0.004);
+        add(deco, roundedBox(0.2, 0.045, 0.03, 0.016, 1), bm, sd * 0.2, 0.69, faceZ(0.2, 0.69) + 0.016);
+        add(deco, roundedBox(0.21, 0.02, 0.03, 0.009, 1), M('#7A4228'), sd * 0.2, 0.667, faceZ(0.2, 0.667) + 0.03);
+        // 주근깨
+        for (const [fx, fy] of [[0.09, 0.575], [0.13, 0.55], [0.17, 0.575]]) dec(deco, M('#7A4A30'), 0.011, 0.011, 0.008, sd * fx, fy, 0.004, 6);
       }
-      ell(deco, hair, 0.56, 0.55, 0.26, 0, 0.52, -0.38, 18);
-      // 흰 옷
-      add(deco, roundedBox(1.04, 0.3, 0.88, 0.14, 6), cloth, 0, 0.33, 0);
-      const sash = add(deco, roundedBox(0.72, 0.17, 0.05, 0.022, 2), cloth, 0.02, 0.5, 0.425); sash.rotation.z = -0.3;
-      const br = add(deco, new THREE.TorusGeometry(0.045, 0.02, 8, 16), gold, -0.3, 0.6, 0.43);
-      add(deco, ringGeo(1.07, 0.91, 0.16, 0.9, 0.74, 0.1, 0.03, 0.008), dk, 0, 0.36, 0);
-      ell(deco, dk, 0.045, 0.045, 0.04, 0.26, 0.375, 0.46, 10);
-      for (const dx of [0.23, 0.29]) { const tl = add(deco, roundedBox(0.045, 0.22, 0.02, 0.009, 1), dk, dx, 0.26, 0.465); tl.rotation.z = (dx - 0.26) * 3; }
-      for (const [lx, ly] of [[-0.3, 0.26], [0.0, 0.23], [0.4, 0.27]]) for (let k = 0; k < 3; k++) { const lf = ell(deco, gold, 0.035, 0.014, 0.008, lx + k * 0.05, ly + (k % 2) * 0.02, 0.447, 6); lf.rotation.z = 0.5 - k * 0.3; }
-      body.userData.handX = 0.6; body.userData.handZ = 0.3;
+      // 뒷머리: 등을 덮는 긴 머리 + 결
+      ell(deco, hair, 0.56, 0.5, 0.2, 0, 0.6, -0.4, 20);
+      for (let i = -3; i <= 3; i++) { const x0 = i * 0.12, pts0 = []; for (let k = 0; k <= 5; k++) { const t = k / 5; pts0.push([x0 + Math.sin(t * Math.PI * 2.5 + i) * 0.03, 1.0 - t * 0.85, -0.52 - Math.sin(t * Math.PI) * 0.06]); } wave(pts0, 0.05, i % 2 ? hair2 : hair); }
+      // 흰 옷: 아랫몸을 감싸고, 윗단은 말려 있는 천 + 회색 끈 매듭 + 금장식
+      add(deco, roundedBox(1.05, 0.27, 0.89, 0.12, 6), cloth, 0, 0.31, 0);
+      wave([[-0.5, 0.47, 0.4], [-0.25, 0.44, 0.45], [0.05, 0.42, 0.46], [0.3, 0.44, 0.45], [0.5, 0.48, 0.4]], 0.04, cloth);
+      wave([[-0.48, 0.3, 0.46], [-0.2, 0.36, 0.47], [0.1, 0.4, 0.47]], 0.022, M('#E9E2D6'));
+      add(deco, ringGeo(1.07, 0.91, 0.16, 0.99, 0.83, 0.12, 0.025, 0.006), dk, 0, 0.36, 0);
+      ell(deco, dk, 0.04, 0.035, 0.035, 0.2, 0.375, 0.465, 10);
+      for (const dx of [-0.025, 0.025]) { const tl = add(deco, roundedBox(0.035, 0.2, 0.02, 0.009, 1), dk, 0.2 + dx, 0.27, 0.47); tl.rotation.z = dx * 6; }
+      add(deco, new THREE.TorusGeometry(0.04, 0.016, 8, 16), gold, -0.33, 0.47, 0.455);
+      for (const [lx, ly] of [[-0.36, 0.22], [-0.06, 0.21], [0.3, 0.22]]) for (let k = 0; k < 3; k++) { const lf = ell(deco, gold, 0.032, 0.013, 0.008, lx + k * 0.045, ly + (k % 2) * 0.018, 0.448, 6); lf.rotation.z = 0.5 - k * 0.3; }
+      body.userData.handX = 0.6; body.userData.handZ = 0.36;
       break;
     }
     case 'cake': { // 두섬이: 초코 케이크에 딸기 가득
@@ -390,7 +402,6 @@ function buildAccessory(acc, top, body, deco, bm) {
       const sm = add(deco, arcGeo(0.09, 0.009, 1.5), line, 0, 0.665, 0.428); sm.rotation.z = -Math.PI / 2 - 0.75;
       add(deco, roundedBox(1.04, 0.37, 0.88, 0.18, 6), M('#F0761C', { rim: 0.14 }), 0, 0.35, 0);
       add(deco, roundedBox(0.2, 0.055, 0.03, 0.012, 1), M('#FFC61A'), 0, 0.42, 0.447); add(deco, roundedBox(0.06, 0.15, 0.03, 0.012, 1), M('#FFC61A'), 0, 0.35, 0.447);
-      for (const s of [-1, 1]) add(deco, roundedBox(0.075, 0.37, 0.03, 0.012, 1), M('#8A5230'), s * 0.31, 0.35, 0.445);
       break;
     }
     case 'fedora': { // 잭아저씨
