@@ -416,6 +416,7 @@ const GB = (() => {
     init, build3D, open, close, isOpen, clean,
     get board3D() { return board3D; },
     get count() { return notes.size; },
+    get posted() { return myKeys.size > 0; },
     get status() { return statusOf(); },
     get presence() { return presenceCount(); },
   };

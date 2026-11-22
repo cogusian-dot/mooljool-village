@@ -32,6 +32,7 @@
 - 낮/밤(`MOODS`, `#btnDayNight` → `PZ.toggleMood()`, 0.7초 동안 조명·안개·창문/가로등 빛이 바뀜, 선택은 localStorage `mjplaza:mood`, 기본 밤). 밤에만 불꽃놀이, 하늘은 `body.plazaNight`(별)/`plazaDay`. 점광원은 마을 셰이더 비용 때문에 안 씀, 벽돌 바닥 CanvasTexture, 시계탑 마을회관(시계는 실제 시각), 방명록 게시판(E → 쓰기 창), 물방울 깃발, 노점, 가로등·줄깃발·벤치·풍선, 불꽃놀이
 - 레퍼런스는 사용자가 준 다른 게임 광장 사진이지만 분위기만 참고(건물·깃발 디자인은 베끼지 않음)
 - 마을 완료 후 땀땀이에게 말 걸면 완성 창이 다시 열림
+- 마을회관 문 앞 E → `PZ.openInfo()`(패키지 영상 → 설명 페이지). 이때 `#infoClose`(✕)는 `PZ.backFromInfo()`로 광장 복귀, '다른 씨앗 심기'는 `replay()`가 `PZ.exitQuiet()`로 광장을 조용히 떠남. 목표 안내는 글을 남긴 뒤(`GB.posted`) 회관 문을 가리킴
 
 ## 함께 접속하기 (js/net.js, js/multiplayer.js, css/multiplayer.css)
 - 다른 접속자는 광장에서만 보임(`m`=광장에 있음). 좌표 x·z는 광장 한가운데 기준으로 보냄(DB 규칙이 -60~60이라서)

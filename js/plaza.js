@@ -327,13 +327,37 @@ const PZ = (() => {
   }
   function interactables(list) {
     if (GB.board3D) list.push({ id: 'board', pos: GB.board3D.front, r: 3.4, h: 6.4, label: '방명록 쓰기', act: () => GB.open({ compose: true, seedId: G.seedId && G.completed.has(G.seedId) ? G.seedId : null }) });
+    // 마을회관 문 → 땀땀이 알아보기 (패키지 영상 → 설명 페이지). 닫으면 광장으로 돌아와요
+    list.push({ id: 'hall', pos: at(0, -14.1), r: 2.8, h: 4.6, label: '마을회관에서 땀땀이 알아보기', act: async () => openInfo() });
     list.push({ id: 'exit', pos: at(0, 13.4), r: 2.2, h: 2.4, label: from === 'setup' ? '씨앗 심으러 마을로' : '마을로 돌아가기', act: async () => leave() });
   }
   function objective() {
-    return { t: '게시판에서 E를 눌러 방명록을 남기고, 친구들과 놀아요', target: GB.board3D ? GB.board3D.front : null, h: 6.4 };
+    if (!GB.posted || G.infoSeen) return { t: '게시판에서 E를 눌러 방명록을 남기고, 친구들과 놀아요', target: GB.board3D ? GB.board3D.front : null, h: 6.4 };
+    return { t: '마을회관에 들어가 땀땀이를 더 알아봐요', target: at(0, -14.1), h: 4.8 };
+  }
+  // 설명 페이지: 광장에서 열면 ✕로 닫을 때 광장으로 돌아와요
+  let infoFromPlaza = false;
+  function openInfo() {
+    infoFromPlaza = true; G.infoSeen = true;
+    MP.closeMenu(); $('#hud').classList.remove('show'); G.mode = 'complete';
+    openTtamiInfo();
+  }
+  function backFromInfo() {
+    if (!infoFromPlaza) return false;
+    infoFromPlaza = false;
+    SFX.play('click'); closeInfo(); closeApp();
+    G.render3D = true; SFX.pauseBgm(false);
+    $('#hud').classList.add('show'); G.mode = 'play'; G.busy = false; camFollow();
+    refreshObjective(); return true;
+  }
+  // 광장에 있다가 '다른 씨앗 심기'로 가면 조용히 광장을 떠나요
+  function exitQuiet() {
+    infoFromPlaza = false;
+    if (!G.inPlaza) return;
+    G.inPlaza = false; from = null; setMood(false); MP.closeMenu(); MP.syncAll(); refreshPlazaBtn();
   }
   function near(x, z, r = 26) { return Math.hypot(x - PLAZA.x, z - PLAZA.z) < r; }
-  return { build, enter, leave, update, toggleMood, clampWalk, interactables, objective, near, get from() { return from; } };
+  return { build, enter, leave, update, toggleMood, openInfo, backFromInfo, exitQuiet, clampWalk, interactables, objective, near, get from() { return from; } };
 })();
 
 // 오른쪽 위 ⛲ 버튼: 식물을 다 키운 뒤 마을에서는 '광장', 광장에서는 '나가기'

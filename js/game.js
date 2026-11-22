@@ -1241,6 +1241,7 @@ function showComplete() {
 }
 function replay() {
   SFX.play('click');
+  PZ.exitQuiet();
   $('#complete').classList.remove('show');
   closeInfo(); closeApp();
   G.render3D = true; SFX.pauseBgm(false);
