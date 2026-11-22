@@ -1288,6 +1288,7 @@ function buildUI() {
   $('#btnHelp').onclick = () => { SFX.play('click'); showHelp(false); };
   $('#btnHome').onclick = goHome;
   $('#btnPlaza').onclick = goPlaza;
+  $('#btnDayNight').onclick = () => { SFX.init(); PZ.toggleMood(); };
   $('#helpClose').onclick = () => { SFX.play('click'); $('#help').classList.remove('show'); };
   $('#dialog').onclick = () => advanceDialog();
   $('#actBtn').onclick = (e) => { e.preventDefault(); if (!advanceDialog()) interact(); };
