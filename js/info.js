@@ -219,7 +219,7 @@ function buildInfo() {
   $('#appOffline').onclick = () => { SFX.play('click'); showAppFrame('app/mooljoolday_app.html'); };
   $('#appLandingBack').onclick = () => { SFX.play('click'); $('#appView').classList.remove('frame'); };
   $('#appReplay').onclick = replay;
-  $('#infoClose').onclick = replay;
+  $('#infoClose').onclick = () => { if (!PZ.backFromInfo()) replay(); };   // 광장에서 열었으면 광장으로
 }
 window.addEventListener('DOMContentLoaded', buildInfo);
 
