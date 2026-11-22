@@ -59,7 +59,8 @@ const PZ = (() => {
     add(parent, cyl(0.28, 0.34, 0.3, 12), M('#2E3238'), p.x, 0.15, p.z);
     add(parent, cyl(0.09, 0.12, 3.4, 10), M('#2E3238'), p.x, 1.85, p.z);
     add(parent, cyl(0.22, 0.16, 0.12, 10), M('#2E3238'), p.x, 3.55, p.z);
-    ell(parent, M('#FFE7A6', { em: '#FFC861', ei: 1.4, nobump: true }), 0.25, 0.32, 0.25, p.x, 3.92, p.z, 14);
+    if (!glowMats.lamp) glowMats.lamp = new THREE.MeshStandardMaterial({ color: '#FFE7A6', emissive: '#FFC861', emissiveIntensity: 1.4, roughness: 0.6 });
+    ell(parent, glowMats.lamp, 0.25, 0.32, 0.25, p.x, 3.92, p.z, 14);
     add(parent, new THREE.ConeGeometry(0.32, 0.3, 10), M('#2E3238'), p.x, 4.33, p.z);
     col(x, z, 0.45);
     return V3(p.x, 3.9, p.z);
@@ -86,7 +87,7 @@ const PZ = (() => {
   // ─── 마을회관 (시계탑이 있는 작은 회관) ───
   function hall(parent, live) {
     const h = new THREE.Group(); h.position.copy(at(0, -17.5)); parent.add(h);
-    const wall = M('#F6E6CC', { rim: 0.12 }), trim = M('#E7CFA9'), roof = M('#E0745A', { rim: 0.14 }), roofD = M('#C95E46'), wood = M('#A8693E'), glow = M('#FFE2A0', { em: '#FFB84A', ei: 0.9, nobump: true });
+    const wall = M('#F6E6CC', { rim: 0.12 }), trim = M('#E7CFA9'), roof = M('#E0745A', { rim: 0.14 }), roofD = M('#C95E46'), wood = M('#A8693E'), glow = (glowMats.win = new THREE.MeshStandardMaterial({ color: '#FFE2A0', emissive: '#FFB84A', emissiveIntensity: 0.9, roughness: 0.6 }));
     add(h, roundedBox(13, 0.5, 6.6, 0.18, 3), trim, 0, 0.25, 0);
     add(h, roundedBox(12.2, 4.4, 5.8, 0.4, 5), wall, 0, 2.6, 0);
     add(h, roundedBox(13.2, 0.36, 6.8, 0.16, 3), roofD, 0, 4.9, 0);
@@ -224,7 +225,7 @@ const PZ = (() => {
     for (const b of anim.balloons) { b.g.position.y = Math.sin(t * 1.3 + b.ph) * 0.15; b.g.rotation.z = Math.sin(t * 0.9 + b.ph) * 0.05; }
     for (const f of anim.flags) { const a = f.m.geometry.attributes.position, arr = a.array; for (let i = 0; i < arr.length; i += 3) { const x = f.base[i]; arr[i + 2] = Math.sin(t * 4 - x * 2.4) * 0.12 * x; } a.needsUpdate = true; }
     if (anim.clock) { const d = new Date(); anim.clock.hp.rotation.z = -((d.getHours() % 12) + d.getMinutes() / 60) / 12 * Math.PI * 2; anim.clock.mp.rotation.z = -d.getMinutes() / 60 * Math.PI * 2; }
-    if (here) { anim.fwT -= dt; if (anim.fwT <= 0) { anim.fwT = 1.2 + Math.random() * 2.2; launch(); if (Math.random() < 0.3) setTimeout(launch, 250); } }
+    if (here && mood === 'night') { anim.fwT -= dt; if (anim.fwT <= 0) { anim.fwT = 1.2 + Math.random() * 2.2; launch(); if (Math.random() < 0.3) setTimeout(launch, 250); } }
     for (let i = anim.rockets.length - 1; i >= 0; i--) {
       const r = anim.rockets[i]; r.t += dt; r.m.position.y += r.vy * dt; r.vy -= 6 * dt;
       if (Math.random() < 0.6) { const m = new THREE.Mesh(sparkGeo, new THREE.MeshBasicMaterial({ color: '#FFE2A0', transparent: true })); m.position.copy(r.m.position); m.scale.setScalar(0.07); W.scene.add(m); anim.sparks.push({ m, v: V3(0, -0.5, 0), t: 0, life: 0.45, s: 0.07 }); }
@@ -237,21 +238,56 @@ const PZ = (() => {
     }
   }
 
-  // ─── 해 질 녘 분위기 ───
+  // ─── 낮 / 밤 (불을 껐다 켜듯이 바꿔요) ───
+  const MOODS = {
+    day:   { fog: '#CFEFFF', near: 48, far: 100, hc: '#FFF6E6', hg: '#9CC97A', hi: 0.7, sc: '#FFF1D8', si: 1.12, fi: 0.25, lamp: 0.25, win: 0.15, pl: 0 },
+    night: { fog: '#22255A', near: 32, far: 90, hc: '#9AA6E8', hg: '#262752', hi: 0.4, sc: '#B8C2FF', si: 0.32, fi: 0.12, lamp: 2.6, win: 1.8, pl: 0 },
+  };
+  let mood = 'night', moodTw = 0;
+  try { if (localStorage.getItem('mjplaza:mood') === 'day') mood = 'day'; } catch (e) { }
+  const lights = [], glowMats = { lamp: null, win: null };
+  function lightsOf() { const sc = W.scene; return { hemi: sc.children.find(o => o.isHemisphereLight), fill: sc.children.find(o => o.isDirectionalLight && o !== W.sun) }; }
+  function snapshot() {
+    const sc = W.scene, { hemi, fill } = lightsOf();
+    return { fog: '#' + sc.fog.color.getHexString(), near: sc.fog.near, far: sc.fog.far, hc: '#' + hemi.color.getHexString(), hg: '#' + hemi.groundColor.getHexString(), hi: hemi.intensity,
+      sc: '#' + W.sun.color.getHexString(), si: W.sun.intensity, fi: fill ? fill.intensity : 0,
+      lamp: glowMats.lamp ? glowMats.lamp.emissiveIntensity : 0, win: glowMats.win ? glowMats.win.emissiveIntensity : 0, pl: lights[0] ? lights[0].intensity : 0 };
+  }
+  const _ca = new THREE.Color(), _cb = new THREE.Color();
+  function applyMood(A, B, k) {
+    const sc = W.scene, { hemi, fill } = lightsOf(), L = (a, b) => a + (b - a) * k, C = (out, a, b) => out.copy(_ca.set(a)).lerp(_cb.set(b), k);
+    C(sc.fog.color, A.fog, B.fog); sc.fog.near = L(A.near, B.near); sc.fog.far = L(A.far, B.far);
+    C(hemi.color, A.hc, B.hc); C(hemi.groundColor, A.hg, B.hg); hemi.intensity = L(A.hi, B.hi);
+    C(W.sun.color, A.sc, B.sc); W.sun.intensity = L(A.si, B.si); if (fill) fill.intensity = L(A.fi, B.fi);
+    if (glowMats.lamp) glowMats.lamp.emissiveIntensity = L(A.lamp, B.lamp);
+    if (glowMats.win) glowMats.win.emissiveIntensity = L(A.win, B.win);
+    for (const l of lights) l.intensity = L(A.pl, B.pl);
+  }
+  function setSky() {
+    document.body.classList.toggle('plazaNight', !!G.inPlaza && mood === 'night');
+    document.body.classList.toggle('plazaDay', !!G.inPlaza && mood === 'day');
+  }
   function setMood(on) {
-    const sc = W.scene, hemi = sc.children.find(o => o.isHemisphereLight), fill = sc.children.find(o => o.isDirectionalLight && o !== W.sun);
-    if (on) {
-      saved = { fog: sc.fog.color.getHex(), near: sc.fog.near, far: sc.fog.far, hc: hemi.color.getHex(), hg: hemi.groundColor.getHex(), hi: hemi.intensity, sc: W.sun.color.getHex(), si: W.sun.intensity, fi: fill ? fill.intensity : 0 };
-      sc.fog.color.set('#8A78B8'); sc.fog.near = 40; sc.fog.far = 95;
-      hemi.color.set('#FFD9C2'); hemi.groundColor.set('#6B6FA8'); hemi.intensity = 0.62;
-      W.sun.color.set('#FFB98A'); W.sun.intensity = 0.95; if (fill) fill.intensity = 0.35;
-      document.body.classList.add('plazaSky');
-    } else if (saved) {
-      sc.fog.color.setHex(saved.fog); sc.fog.near = saved.near; sc.fog.far = saved.far;
-      hemi.color.setHex(saved.hc); hemi.groundColor.setHex(saved.hg); hemi.intensity = saved.hi;
-      W.sun.color.setHex(saved.sc); W.sun.intensity = saved.si; if (fill) fill.intensity = saved.fi;
-      document.body.classList.remove('plazaSky'); saved = null;
-    }
+    if (on) { if (!saved) saved = snapshot(); applyMood(MOODS[mood], MOODS[mood], 1); }
+    else if (saved) { const v = saved; saved = null; applyMood(v, v, 1); for (const l of lights) l.intensity = 0; }
+    setSky(); refreshMoodBtn();
+  }
+  function toggleMood() {
+    if (!G.inPlaza) return;
+    const A = snapshot(); mood = mood === 'night' ? 'day' : 'night';
+    try { localStorage.setItem('mjplaza:mood', mood); } catch (e) { }
+    SFX.play('tok'); SFX.play(mood === 'night' ? 'sparkle' : 'click');
+    const id = ++moodTw;
+    tween(0.7, k => { if (id === moodTw && G.inPlaza) applyMood(A, MOODS[mood], k); });
+    setSky(); refreshMoodBtn();
+    if (mood === 'night') anim.fwT = 0.3;
+    toast(mood === 'night' ? '🌙 밤이 됐어요! 불꽃놀이가 시작돼요' : '☀️ 낮이 됐어요!');
+  }
+  function refreshMoodBtn() {
+    const b = $('#btnDayNight'); if (!b) return;
+    b.classList.toggle('hidden', !G.inPlaza);
+    b.querySelector('span').textContent = mood === 'night' ? '☀️' : '🌙';
+    b.querySelector('small').textContent = mood === 'night' ? '낮으로' : '밤으로';
   }
 
   // ─── 들어가기 / 나가기 ───
@@ -297,7 +333,7 @@ const PZ = (() => {
     return { t: '게시판에서 E를 눌러 방명록을 남기고, 친구들과 놀아요', target: GB.board3D ? GB.board3D.front : null, h: 6.4 };
   }
   function near(x, z, r = 26) { return Math.hypot(x - PLAZA.x, z - PLAZA.z) < r; }
-  return { build, enter, leave, update, clampWalk, interactables, objective, near, get from() { return from; } };
+  return { build, enter, leave, update, toggleMood, clampWalk, interactables, objective, near, get from() { return from; } };
 })();
 
 // 오른쪽 위 ⛲ 버튼: 식물을 다 키운 뒤 마을에서는 '광장', 광장에서는 '나가기'

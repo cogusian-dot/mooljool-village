@@ -30,6 +30,8 @@
 }
 
 /* 광장으로 가기 버튼 */
-#btnPlaza.hidden { display: none !important; }
+#btnPlaza.hidden, #btnDayNight.hidden { display: none !important; }
+#btnDayNight { grid-template-rows: auto auto; align-content: center; gap: 0; line-height: 1; }
+#btnDayNight span { font-size: .82em; } #btnDayNight small { font-size: 11px; color: var(--ink2); margin-top: 1px; }
 #btnPlaza { grid-template-rows: auto auto; align-content: center; gap: 0; line-height: 1; }
 #btnPlaza span { font-size: .82em; } #btnPlaza small { font-size: 11px; color: var(--ink2); margin-top: 1px; }
