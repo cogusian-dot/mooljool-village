@@ -50,13 +50,15 @@ function burst(kind, pos, n = 12, o = {}) {
     if (kind === 'sparkle') { geo = PART_GEO.oct; mat = M(['#FFF6A8', '#FFFFFF', '#FFE06B', '#BFF3FF'][i % 4], { em: '#FFF2A0', ei: 0.9, nobump: true }); s = 0.09 + Math.random() * 0.08; grav = -2; vel.multiplyScalar(0.7); life = 1.1; spin = 6; }
     if (kind === 'leaf') { mat = M(['#5DB34F', '#7CCB5E', '#4FA548'][i % 3]); s = 0.12; grav = -3; vel.set((Math.random() - .5) * 3, Math.random() * 1.5, (Math.random() - .5) * 3); life = 1.8; spin = 4; }
     if (kind === 'splash') { mat = M('#7CCDF2', { r: 0.2, nobump: true, rim: 0.3 }); s = 0.08 + Math.random() * 0.08; vel.set((Math.random() - .5) * 3, 3 + Math.random() * 3, (Math.random() - .5) * 3); life = 0.9; grav = -14; }
-    if (kind === 'tear') { mat = M('#6CC4F5', { r: 0.2, nobump: true, rim: 0.3 }); s = 0.055; vel.set((Math.random() - .5) * 0.5, 0.5, (Math.random() - .5) * 0.5); grav = -6; life = 0.7; }
+    if (kind === 'tear') { mat = M('#6CC4F5', { r: 0.2, nobump: true, rim: 0.3 }); s = 0.06; vel.set((Math.random() - .5) * 0.3, 2.3 + Math.random() * 0.5, (Math.random() - .5) * 0.3); grav = -9; life = 0.85; }
+    if (o.vel) vel.add(o.vel);
     if (kind === 'puff') { mat = M('#FFFFFF', { nobump: true, rim: 0 }); s = 0.25; vel.set((Math.random() - .5) * 2, 0.6 + Math.random(), (Math.random() - .5) * 2); grav = 0; life = 0.6; }
     if (kind === 'rock') { mat = M('#B9B3AA'); s = 0.12 + Math.random() * 0.1; grav = -16; life = 0.8; }
     if (kind === 'confetti') { geo = PART_GEO.box; mat = M(['#FF6B8B', '#FFD23A', '#6BC4F0', '#7CC46E', '#B98CFF', '#FF9E5E'][i % 6], { nobump: true }); s = 0.14; vel.set((Math.random() - .5) * 7, 6 + Math.random() * 6, (Math.random() - .5) * 7); grav = -7; life = 2.6; spin = 8; }
     if (kind === 'heart') { mat = M('#FF7FA8', { nobump: true }); s = 0.1; grav = 1; vel.set((Math.random() - .5) * 1.5, 1.5, (Math.random() - .5) * 1.5); life = 1.2; }
     const m = new THREE.Mesh(geo, mat); m.position.copy(pos); m.scale.setScalar(s * (o.scale || 1));
     if (kind === 'leaf') m.scale.set(s, s * 0.3, s * 1.6);
+    if (kind === 'tear') m.scale.set(s, s * 1.35, s);
     m.castShadow = false; W.scene.add(m);
     G.particles.push({ m, vel, grav, life, age: 0, s: m.scale.clone(), spin, kind });
   }
@@ -185,7 +187,9 @@ function spawnPlayer() {
   G.tools = { bucket: makeBucketMesh() };
   for (const k of ['bucket']) { const m = G.tools[k]; m.visible = false; G.player.userData.body.add(m); }
   // 양동이는 머리 위에 이고 다녀요 (물이 있으면 물이 찰랑)
-  const bw = add(G.tools.bucket, cyl(0.25, 0.25, 0.03, 18), M('#7CCDF2', { r: 0.2, nobump: true, em: '#2F8FD0', ei: 0.25 }), 0, 0.39, 0, false);
+  const bw = new THREE.Group(); G.tools.bucket.add(bw);   // 양동이 윗부분까지 찰랑이는 하늘색 물
+  add(bw, cyl(0.25, 0.215, 0.3, 22), M('#38AEEA', { r: 0.25, nobump: true, em: '#1E8CD0', ei: 0.12, rim: 0.15 }), 0, 0.22, 0, false);
+  ell(bw, M('#D9F6FF', { r: 0.1, nobump: true, em: '#BDEFFF', ei: 0.5 }), 0.09, 0.012, 0.05, -0.08, 0.372, 0.06, 12);
   bw.visible = false; G.tools.bucket.userData.water = bw;
   const tb = new THREE.Box3().setFromObject(G.player.userData.top);
   G.headY = Math.min(1.3, Math.max(1.0, isFinite(tb.max.y) ? tb.max.y - 0.04 : 1.0));
@@ -237,13 +241,15 @@ function updateToolSwing(dt) {
 }
 function updateHeadBucket(t) {
   const b = G.tools && G.tools.bucket; if (!b || G.swingTool === 'bucket') return;
-  const has = !!G.flags.bucket && ['play', 'cutscene', 'complete'].includes(G.mode);
+  // 언덕에서 햇빛을 모을 때는 양동이를 가방에 넣어 둬요
+  const has = !!G.flags.bucket && ['play', 'cutscene', 'complete'].includes(G.mode) && !G.onHill && !G.sunHold;
   b.visible = has; if (!has) return;
   const full = G.inv.water > 0, walk = Math.min(1, G.speed / 5);
   b.position.set(0, (G.headY || 1.0) + Math.abs(Math.sin(t * 12)) * 0.03 * walk, 0);
   b.rotation.set(Math.sin(t * 6) * 0.05 * walk, 0, Math.sin(t * 12) * 0.06 * walk);
   b.scale.setScalar(1.15);
   b.userData.water.visible = full;
+  if (full) b.userData.water.rotation.z = Math.sin(t * 7) * 0.04 * walk;
   if (!G.sunHold) { // 두 손으로 양동이를 받쳐요
     const u = G.player.userData, hy = Math.min((G.headY || 1.0) + 0.12, 1.25);
     u.hands[0].position.set(-0.4, hy, 0.02); u.hands[1].position.set(0.4, hy, 0.02);
@@ -296,7 +302,8 @@ function updateNPCs(dt, t) {
     } else if (n.sad > 0) {
       n.sad -= dt; n.facing = Math.atan2(G.pos.x - p.x, G.pos.z - p.z);
       n.tear = (n.tear || 0) - dt;
-      if (n.tear <= 0) { n.tear = 0.22; const s = Math.sin(n.root.rotation.y), c = Math.cos(n.root.rotation.y); for (const e of [-0.19, 0.19]) burst('tear', V3(p.x + c * e + s * 0.44, 0.66, p.z - s * e + c * 0.44), 1); if (Math.random() < 0.3) SFX.play('blip', 0.6); }
+      // 두 눈에서 위로 솟았다가 양옆으로 포물선을 그리며 떨어지는 눈물
+      if (n.tear <= 0) { n.tear = 0.16; const s = Math.sin(n.root.rotation.y), c = Math.cos(n.root.rotation.y); for (const e of [-0.19, 0.19]) { const side = Math.sign(e); burst('tear', V3(p.x + c * e + s * 0.44, 0.7, p.z - s * e + c * 0.44), 1, { vel: V3(c * side * 1.5 + s * 0.35, 0, -s * side * 1.5 + c * 0.35) }); } if (Math.random() < 0.3) SFX.play('blip', 0.6); }
     } else if (n.working) {
       n.facing = Math.atan2(-11 - p.x, 8.6 - p.z);
     } else if (n.talking || dPlayer < 3.5) {
