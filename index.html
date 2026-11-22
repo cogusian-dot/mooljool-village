@@ -57,7 +57,7 @@
       <h2>땀땀이에게 심을 씨앗을 골라요</h2>
       <p class="lead">모두 집에서 화분에 키울 수 있는 식물이에요. ★가 적을수록 키우기 쉬워요.</p>
       <div class="seedLayout"><div id="seedGrid"></div><div id="seedDetail"></div></div>
-      <div class="stepFoot"><button class="btn ghost" id="seedBack">이전</button><button class="btn" id="seedGo">씨앗 심으러 가기</button></div>
+      <div class="stepFoot"><button class="btn ghost" id="seedBack">이전</button><button class="btn yellow" id="seedPlaza">⛲ 광장 먼저 구경하기</button><button class="btn" id="seedGo">씨앗 심으러 가기</button></div>
     </div>
   </div>
 </section>
@@ -92,7 +92,7 @@
 <div id="topBtns">
   <button class="round" id="btnSound" title="효과음 켜기/끄기" aria-label="효과음">🔊</button>
   <button class="round" id="btnMusic" title="배경음악 켜기/끄기" aria-label="배경음악">🎵</button>
-  <button class="round" id="btnPlaza" title="광장으로 가기" aria-label="광장으로 가기"><span>⛲</span><small>광장</small></button>
+  <button class="round hidden" id="btnPlaza" title="광장으로 가기" aria-label="광장으로 가기"><span>⛲</span><small>광장</small></button>
   <button class="round" id="btnHelp" title="조작법" aria-label="조작법">❔</button>
   <button class="round" id="btnHome" title="처음으로" aria-label="처음으로">🏠</button>
 </div>
@@ -113,7 +113,7 @@
       <kbd>E · 스페이스</kbd><span>말 걸기, 흔들기, 물 뜨기, 돌멩이 던지기, 사다리 오르기</span>
       <kbd>🕹️ · ✋</kbd><span>터치 화면에서는 왼쪽 조이스틱과 오른쪽 버튼</span>
       <kbd>! 표시</kbd><span>다음에 가 볼 곳이에요</span>
-      <kbd>⛲ 광장</kbd><span>친구들이 모이는 광장으로 바로 가요</span>
+      <kbd>⛲ 광장</kbd><span>식물을 다 키우면 열려요. 친구들과 만나고 방명록을 남기는 곳이에요</span>
     </div>
     <button class="btn orange" id="helpClose">알겠어요!</button>
   </div>
@@ -132,7 +132,7 @@
     <div id="cpMeta"></div>
     <p class="cpTip" id="cpTip"></p>
     <div class="cpBtns">
-      <button class="btn yellow" id="cpBrag">🧺 수확 자랑하기 (방명록)</button>
+      <button class="btn yellow" id="cpBrag">⛲ 광장에 가서 자랑하기</button>
       <button class="btn orange" id="cpLearn">땀땀이 알아보기</button>
       <button class="btn" id="cpReplay">다른 씨앗 심기</button>
     </div>
@@ -354,6 +354,7 @@
 <script src="js/models.js"></script>
 <script src="js/world.js"></script>
 <script src="js/game.js"></script>
+<script src="js/plaza.js"></script>
 <script src="js/info.js"></script>
 <script src="js/net.js"></script>
 <script src="js/guestbook.js"></script>

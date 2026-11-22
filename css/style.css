@@ -11,6 +11,7 @@ html { scroll-padding-top: env(safe-area-inset-top, 0px); }
 html, body { height: 100%; overflow: hidden; overscroll-behavior: none; touch-action: manipulation; }
 #gl { touch-action: none; }
 body { font-family: var(--jua); color: var(--ink); background: linear-gradient(180deg, #8ED3F7 0%, #BDE6FB 45%, #CFEFFF 70%, #E9F6E0 100%); user-select: none; -webkit-user-select: none; }
+body.plazaSky { background: linear-gradient(180deg, #2C2F6E 0%, #5B4A93 38%, #B5739E 68%, #F2A27E 88%, #F7C59A 100%); }
 #gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
 button { font-family: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
 button:focus-visible, input:focus-visible { outline: 4px solid rgba(59,168,240,.55); outline-offset: 3px; }
@@ -425,6 +426,7 @@ button:focus-visible, input:focus-visible { outline: 4px solid rgba(59,168,240,.
   #reqBubble .bub { transform: translate(40px, -50%) scale(.82); transform-origin: left center; }
   .step h2 { font-size: 23px; word-break: keep-all; } .step .lead { font-size: 15px; word-break: keep-all; }
   .stepFoot { position: sticky; bottom: -22px; padding: 12px 0 22px; margin-bottom: -22px; background: linear-gradient(180deg, rgba(255,243,227,0), #FFF3E3 36%); }
+  .stepFoot:has(#seedPlaza) { flex-wrap: nowrap; gap: 6px; } .stepFoot:has(#seedPlaza) .btn { font-size: 14px; padding: 10px 10px 12px; white-space: nowrap; } .stepFoot #seedBack { flex: none; padding-left: 14px; padding-right: 14px; }
   .logo { font-size: 15vw; } #appBar b { display: none; } #appBar .btn { font-size: 14px; padding: 8px 12px 10px; }
 }
 /* 휴대폰 가로 화면(높이가 낮을 때) */

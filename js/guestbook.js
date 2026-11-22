@@ -319,9 +319,9 @@ const GB = (() => {
 
   // ─── 마을 광장의 커다란 게시판 ───
   let board3D = null, tex = null, texCanvas = null, corkBg = null, drawTimer = null;
-  function build3D() {
-    const pos = new THREE.Vector3(12, 0, -4.5);
-    const g = new THREE.Group(); g.position.copy(pos); g.rotation.y = Math.atan2(-pos.x, -pos.z);
+  function build3D(at, look) {   // at: 세울 곳, look: 바라볼 곳 (광장에 세워요)
+    const pos = at ? at.clone() : new THREE.Vector3(12, 0, -4.5), lk = look || new THREE.Vector3(0, 0, 0);
+    const g = new THREE.Group(); g.position.copy(pos); g.rotation.y = Math.atan2(lk.x - pos.x, lk.z - pos.z);
     const wood = M('#C98C55'), woodD = M('#A86F3F');
     for (const x of [-3.55, 3.55]) add(g, roundedBox(0.34, 5.6, 0.34, 0.1, 2), woodD, x, 2.8, -0.05);
     add(g, roundedBox(7.7, 4.5, 0.32, 0.14, 3), wood, 0, 3.35, 0);
