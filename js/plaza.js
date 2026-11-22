@@ -382,6 +382,10 @@ const PZ = (() => {
     build();
     from = source; G.inPlaza = true;
     if (source === 'setup') { $('#setup').classList.remove('show'); $('#title').classList.add('hide'); $('#story').classList.remove('show'); spawnPlayer(); G.inv.water = 0; G.flags = {}; }
+    // 광장에는 빈손으로: 게임에서 얻은 물건(사과·양동이·물·반짝이·양분)은 모두 내려놓아요
+    G.inv.apple = 0; G.inv.water = 0; G.inv.crystal = 0; G.inv.nutrient = 0; G.flags.bucket = false;
+    if (G.tools && G.tools.bucket) G.tools.bucket.visible = false; G.swingTool = null;
+    refreshInventory(); $('#inventory').classList.remove('show');
     $('#complete').classList.remove('show');
     G.render3D = true;
     $('#hud').classList.add('show');

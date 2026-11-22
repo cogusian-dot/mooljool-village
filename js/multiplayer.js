@@ -188,7 +188,7 @@ const MP = (() => {
     menuEl.querySelector('#mpName').textContent = R.name;
     refreshMenu();
     menuEl.classList.add('show'); SFX.play('open');
-    R.wave = 1.4;
+    R.wave = 1.4; G.playerWave = 1.4;   // 메뉴를 열면 나도 손을 흔들어요
     return new Promise(res => { menuResolve = res; });
   }
   function refreshMenu() {
@@ -239,7 +239,7 @@ const MP = (() => {
       else if (R.speed < 0.6 && dMe < 3.5 && play) yawT = Math.atan2(G.pos.x - p.x, G.pos.z - p.z);
       R.root.rotation.y += wrapA(yawT - R.root.rotation.y) * Math.min(1, dt * 8);
       R.waveCd -= dt;
-      if (play && dMe < GREET_R && R.waveCd <= 0 && R.speed < 1.2) { R.wave = 1.6; R.waveCd = 9; SFX.play('blip', 1.25); }
+      if (play && dMe < GREET_R && R.waveCd <= 0 && R.speed < 1.2) { R.wave = 1.6; R.waveCd = 9; if (!G.busy) G.playerWave = 1.6; SFX.play('blip', 1.25); }   // 서로 손 흔들어 인사
       R.wave -= dt; R.hop -= dt; R.wiggle -= dt;
       const hopY = R.hop > 0 ? Math.abs(Math.sin(R.hop * 14)) * 0.45 : 0;
       animateCharacter(R.root, t + R.ph, R.speed, { hop: hopY, wave: R.wave > 0 });
