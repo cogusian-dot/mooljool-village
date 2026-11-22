@@ -228,6 +228,7 @@ const MP = (() => {
     if (me.line) updateLine(t);
     if (me.line && G.player && nowMs() - me.line.start > LINE_IN * 1000) G.player.userData.body.rotation.z = Math.sin(t * 9) * 0.28;   // 뒤뚱뒤뚱
     // 다른 사람들
+    let nearAny = false;
     for (const R of remotes.values()) {
       const p = R.root.position; tmp.copy(p);
       if (p.distanceTo(R.target) > 8) p.copy(R.target); else p.lerp(R.target, Math.min(1, dt * 8));
@@ -238,11 +239,15 @@ const MP = (() => {
       if (R.wiggle > 0) yawT = R.wiggleYaw;
       else if (R.speed < 0.6 && dMe < 3.5 && play) yawT = Math.atan2(G.pos.x - p.x, G.pos.z - p.z);
       R.root.rotation.y += wrapA(yawT - R.root.rotation.y) * Math.min(1, dt * 8);
+      // 가까이 있는 동안 서로 계속 손을 흔들어요 (마을 요정들처럼). 처음 가까워질 때만 '뿅' 소리
       R.waveCd -= dt;
-      if (play && dMe < GREET_R && R.waveCd <= 0 && R.speed < 1.2) { R.wave = 1.6; R.waveCd = 9; if (!G.busy) G.playerWave = 1.6; SFX.play('blip', 1.25); }   // 서로 손 흔들어 인사
+      const near = play && dMe < GREET_R + 0.8 && dMe > 0.8 && !(R.trainUntil > nowMs() || R.inTrain > nowMs());
+      if (near && !R.wasNear && R.waveCd <= 0) { R.waveCd = 6; SFX.play('blip', 1.25); }
+      R.wasNear = near;
+      if (near) nearAny = true;
       R.wave -= dt; R.hop -= dt; R.wiggle -= dt;
       const hopY = R.hop > 0 ? Math.abs(Math.sin(R.hop * 14)) * 0.45 : 0;
-      animateCharacter(R.root, t + R.ph, R.speed, { hop: hopY, wave: R.wave > 0 });
+      animateCharacter(R.root, t + R.ph, R.speed, { hop: hopY, wave: R.wave > 0 || (near && R.speed < 2.5 && R.wiggle <= 0) });
       applyWiggle(R.root, t + R.ph, R.wiggle > 0);
       if (R.trainUntil > nowMs() || R.inTrain > nowMs()) R.root.userData.body.rotation.z = Math.sin(t * 9) * 0.28;   // 기차놀이 중엔 뒤뚱뒤뚱
       if (R.trainUntil > nowMs()) { R.puff = (R.puff || 0) - dt; if (R.puff <= 0) { R.puff = 0.12; burst('puff', V3(p.x, p.y + 2.3, p.z), 2); } }
@@ -256,6 +261,8 @@ const MP = (() => {
         R.tag.classList.toggle('show', _mp.visible);
       } else R.tag.classList.remove('show');
     }
+    // 나도 가까운 친구가 있으면 계속 손을 흔들어요 (걷거나 다른 동작 중이 아닐 때)
+    if (nearAny && !G.busy && G.speed < 2.5 && me.wiggle <= 0 && !me.line) G.playerWave = Math.max(G.playerWave || 0, 0.12);
     if (menuId) {
       const R = remotes.get(menuId);
       if (!R || Math.hypot(R.root.position.x - G.pos.x, R.root.position.z - G.pos.z) > 8) closeMenu(); else refreshMenu();
