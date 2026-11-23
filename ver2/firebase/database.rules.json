@@ -1,0 +1,56 @@
+{
+  "rules": {
+    "$room": {
+      "notes": {
+        ".read": "$room === 'guestbook' && query.orderByChild === 'ts' && ((query.limitToLast != null && query.limitToLast <= 1000) || (query.limitToFirst != null && query.limitToFirst <= 100))",
+        ".indexOn": ["ts"],
+        "$id": {
+          ".write": "$room === 'guestbook' && auth != null && !data.exists() && newData.exists()",
+          ".validate": "$id.length === 20 && newData.hasChildren(['name', 'msg', 'seed', 'char', 'color', 'ts', 'uid']) && newData.parent().parent().child('last').child(auth.uid).val() === now && newData.parent().parent().child('meta').child('count').val() === (root.child($room).child('meta').child('count').exists() ? root.child($room).child('meta').child('count').val() : 0) + 1",
+          "name": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 8" },
+          "msg": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 60" },
+          "seed": { ".validate": "newData.isString() && newData.val().length <= 20" },
+          "char": { ".validate": "newData.isString() && newData.val().length <= 20" },
+          "color": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5" },
+          "uid": { ".validate": "newData.val() === auth.uid" },
+          "ts": { ".validate": "newData.val() === now" },
+          "$other": { ".validate": false }
+        }
+      },
+      "meta": {
+        ".read": "$room === 'guestbook'",
+        ".write": "$room === 'guestbook' && auth != null",
+        ".validate": "newData.hasChildren(['count', 't']) && newData.parent().child('last').child(auth.uid).val() === now",
+        "count": { ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() : 0) + 1" },
+        "t": { ".validate": "newData.val() === now && (!data.exists() || data.val() <= now - 1000)" },
+        "$other": { ".validate": false }
+      },
+      "last": {
+        "$uid": {
+          ".write": "$room === 'guestbook' && auth != null && auth.uid === $uid && newData.exists()",
+          ".validate": "newData.val() === now && (!data.exists() || data.val() <= now - 20000)"
+        }
+      },
+      "players": {
+        ".read": "$room === 'guestbook'",
+        "$cid": {
+          ".write": "$room === 'guestbook' && auth != null && (auth.uid === $cid || (!newData.exists() && data.exists() && data.child('t').val() < now - 90000))",
+          ".validate": "newData.hasChildren(['n', 'c', 'm', 'x', 'y', 'z', 'r', 'a', 'an', 'tg', 't'])",
+          "n": { ".validate": "newData.isString() && newData.val().length <= 8" },
+          "c": { ".validate": "newData.isString() && newData.val().length <= 12" },
+          "m": { ".validate": "newData.isNumber() && (newData.val() === 0 || newData.val() === 1)" },
+          "x": { ".validate": "newData.isNumber() && newData.val() >= -60 && newData.val() <= 60" },
+          "y": { ".validate": "newData.isNumber() && newData.val() >= -5 && newData.val() <= 20" },
+          "z": { ".validate": "newData.isNumber() && newData.val() >= -60 && newData.val() <= 60" },
+          "r": { ".validate": "newData.isNumber() && newData.val() >= -7 && newData.val() <= 7" },
+          "a": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3" },
+          "an": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 100000" },
+          "tg": { ".validate": "newData.isString() && newData.val().length <= 120" },
+          "t": { ".validate": "newData.val() === now" },
+          "$other": { ".validate": false }
+        }
+      },
+      "$other": { ".validate": false }
+    }
+  }
+}

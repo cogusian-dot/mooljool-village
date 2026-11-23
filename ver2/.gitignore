@@ -1,0 +1,6 @@
+.claude/
+tests/out/
+node_modules/
+Thumbs.db
+desktop.ini
+_cad/
