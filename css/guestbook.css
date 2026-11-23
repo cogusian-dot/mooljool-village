@@ -136,8 +136,7 @@
 
 /* ── 설명 페이지: 수상 ── */
 .awardBadge { display: inline-block; background: #FFE9A8; color: #8A5A00; font-weight: 800; font-size: 14px; padding: 5px 14px 6px; border-radius: 99px; margin-bottom: 12px; }
-.awardRow { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; margin-top: 30px; align-items: stretch; }
-.awardRow .big { grid-row: span 2; }
+.awardRow { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 30px; max-width: 640px; margin-left: auto; margin-right: auto; }
 .awardRow figure { margin: 0; position: relative; border-radius: 26px; overflow: hidden; background: #fff; }
 .awardRow img { width: 100%; height: 100%; min-height: 240px; object-fit: cover; display: block; cursor: zoom-in; }
 .awardRow figcaption { position: absolute; left: 12px; bottom: 12px; background: rgba(255,255,255,.92); border-radius: 99px; padding: 5px 14px 6px; font-size: 13.5px; font-weight: 700; color: #3B2A20; }

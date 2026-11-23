@@ -117,6 +117,8 @@ const PZ = (() => {
     const sign = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 0.7), new THREE.MeshStandardMaterial({ map: signTexture('물줄때 마을회관', 720, 140, '#FFF6E6', '#7A4A2E', 74), roughness: 0.9 }));
     sign.position.set(0, 4.15, 2.96); h.add(sign);
     for (let i = -2; i <= 2; i++) col(i * 2.6, -17.5, 2.0);
+    // 건물 몸체(바닥 테두리 13×6.6)만 네모로 막아요(원만으로는 벽 안으로 들어갔어요). 문 앞 계단은 올라서서 문에 붙을 수 있게 비워 둬요
+    boxCollider(PLAZA.x, PLAZA.z - 17.5, 6.5, 3.3);
     col(-6, -16, 1.4); col(6, -16, 1.4);
   }
 
@@ -246,8 +248,9 @@ const PZ = (() => {
   function build() {
     if (built) return; built = true;
     const s = W.scene, decor = new THREE.Group();
+    const before = new Set(s.children);   // 광장을 만들며 새로 생긴 것 = 광장 물건(마을에 있을 때 숨겨요)
     // 잔디 땅 + 벽돌 광장
-    const gr = new THREE.Mesh(new THREE.CircleGeometry(58, 48).rotateX(-Math.PI / 2), M('#86C25A', { rim: 0 }));
+    const gr = new THREE.Mesh(new THREE.RingGeometry(0.01, 58, 64, 40).rotateX(-Math.PI / 2), M('#86C25A', { rim: 0 })   /* 둥근 지평선으로 휠 수 있게 안쪽까지 촘촘히(원판은 테두리 점뿐이라 바닥 전체가 기울어 그림자가 어긋났어요) */);
     gr.position.set(PLAZA.x, -0.01, PLAZA.z); gr.receiveShadow = true; s.add(gr);
     const br = new THREE.Mesh(new THREE.CircleGeometry(PLAZA.r + 0.6, 64).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: brickTexture(), roughness: 0.9 }));
     br.position.set(PLAZA.x, 0.02, PLAZA.z); br.receiveShadow = true; s.add(br);
@@ -282,7 +285,9 @@ const PZ = (() => {
     }
     for (let i = 0; i < 40; i++) { const a = i / 40 * Math.PI * 2, x = Math.cos(a) * 16.2, z = Math.sin(a) * 16.2; if (z < -13) continue; ell(decor, M(i % 2 ? '#74BE52' : '#68B249'), 0.75, 0.6, 0.75, PLAZA.x + x, 0.3, PLAZA.z + z, 12); }
     for (let i = 0; i < 18; i++) { const a = i / 18 * Math.PI * 2, rr = 34 + R() * 6; ell(decor, M(['#7DC257', '#8ACB61', '#6FB84E'][i % 3]), 9 + R() * 4, 5 + R() * 3, 9 + R() * 4, PLAZA.x + Math.cos(a) * rr, -1, PLAZA.z + Math.sin(a) * rr, 20); }
-    s.add(mergeByMaterial(decor));
+    s.add(mergeByMaterial(decor, 'plaza')); addOccluders('plaza', live);
+    W.zoneObjs.plaza = s.children.filter(o => !before.has(o));
+    sunZone = '';   // 다음 프레임에 구역 보이기/숨기기를 다시 맞춰요
   }
 
   // ─── 불꽃놀이 ───
@@ -390,7 +395,7 @@ const PZ = (() => {
     G.render3D = true;
     $('#hud').classList.add('show');
     setMood(true);
-    G.pos.copy(at(0, 9)); G.posY = 0; G.speed = 0; G.yaw = Math.PI; G.onHill = false; G.sunHold = false;
+    G.pos.copy(at(0, 9)); G.posY = 0; G.speed = 0; G.yaw = Math.PI; G.onHill = false; G.sunHold = false; camReset();
     if (G.player) { G.player.position.copy(G.pos); G.player.rotation.y = Math.PI; }
     G.cam.pos.set(G.pos.x, 12, G.pos.z + 16); G.cam.look.set(G.pos.x, 1.3, G.pos.z - 2); camFollow();
     G.mode = 'play'; G.busy = false;
@@ -402,7 +407,7 @@ const PZ = (() => {
   }
   function leave() {
     if (!G.inPlaza) return;
-    G.inPlaza = false; setMood(false); MP.syncAll();
+    G.inPlaza = false; setMood(false); MP.syncAll(); camReset();
     MP.closeMenu();
     const src = from; from = null;
     if (src === 'setup') { startGame(); return; }
