@@ -492,27 +492,40 @@ button:focus-visible, input:focus-visible { outline: 4px solid rgba(59,168,240,.
 .helpTouch { display: none; }
 @media (pointer: coarse) { .helpPc { display: none; } .helpTouch { display: grid; } }
 
-/* 터치 화면: 가방은 왼쪽 위에 작게(가진 물건만), 위쪽 버튼도 작게 */
+/* 왼쪽 위 묶음(할 일 안내 + 가방). 컴퓨터에선 묶음 없이 원래 자리 */
+#hudTL { display: contents; }
+#hudTL > * { pointer-events: auto; }
+
+/* 터치 화면: 왼쪽 위에 할 일 안내(작게), 바로 아래 가방(가진 물건만). 위쪽 버튼도 작게 */
 @media (pointer: coarse) {
-  #inventory { left: calc(10px + env(safe-area-inset-left)); top: calc(10px + env(safe-area-inset-top)); bottom: auto; transform: translateY(-160%); gap: 4px; padding: 4px 6px; border-radius: 16px; }
+  #hudTL { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; position: absolute; top: calc(10px + env(safe-area-inset-top)); left: calc(10px + env(safe-area-inset-left)); max-width: calc(100vw - 198px - env(safe-area-inset-left) - env(safe-area-inset-right)); pointer-events: none; }
+  body:has(#btnPlaza:not(.hidden)) #hudTL { max-width: calc(100vw - 242px - env(safe-area-inset-left) - env(safe-area-inset-right)); }
+  #objective { position: relative; top: auto; left: auto; max-width: 100%; font-size: 13px; gap: 7px; padding: 5px 12px 6px 5px; border-radius: 16px; }
+  #objective .objIcon { width: 24px; height: 24px; font-size: 14px; border-radius: 8px; }
+  #objText { line-height: 1.25; overflow-wrap: anywhere; }
+  #inventory { position: relative; left: auto; top: auto; bottom: auto; transform: translateY(-30px); gap: 4px; padding: 4px 6px; border-radius: 14px; }
   #inventory.show { transform: none; }
   #inventory .bagIcon { display: none; }
-  #inventory .slot { width: 32px; height: 32px; font-size: 17px; border-radius: 11px; }
-  #inventory .slot svg { width: 20px; height: 20px; }
+  #inventory .slot { width: 30px; height: 30px; font-size: 16px; border-radius: 10px; }
+  #inventory .slot svg { width: 19px; height: 19px; }
   #inventory .slot:not(.on):not(.sel) { display: none; }
-  #inventory .slot b { min-width: 17px; height: 17px; padding: 0 4px; font-size: 11px; right: -4px; bottom: -4px; border-radius: 9px; }
+  #inventory .slot b { min-width: 16px; height: 16px; padding: 0 4px; font-size: 10px; right: -4px; bottom: -4px; border-radius: 8px; }
   #inventory .slot.sel { transform: translateY(-2px); box-shadow: 0 0 0 2px var(--orange), 0 3px 0 var(--orangeD); }
-  #inventory.show:not(:has(.slot.on)) { opacity: 0; pointer-events: none; }
+  #inventory.show:not(:has(.slot.on)) { display: none; }
   .round { width: 38px; height: 38px; font-size: 17px; border-radius: 13px; }
   .round small { font-size: 9px; }
   .round.off::after { width: 26px; height: 4px; }
   #topBtns { gap: 6px; top: calc(10px + env(safe-area-inset-top)); right: calc(10px + env(safe-area-inset-right)); }
-  #objective { top: calc(54px + env(safe-area-inset-top)); }
+  #toast { top: calc(120px + env(safe-area-inset-top)); }
 }
 @media (pointer: coarse) and (max-height: 480px) {
-  #objective { top: calc(8px + env(safe-area-inset-top)); left: calc(10px + env(safe-area-inset-left)); max-width: calc(100vw - 270px); }
-  #inventory { top: calc(58px + env(safe-area-inset-top)); }
+  #hudTL { max-width: min(420px, calc(100vw - 260px)); }
+  #toast { top: calc(58px + env(safe-area-inset-top)); }
 }
+
+/* 요정이 기물에 부딪힐 때 '꽁!' */
+.bonkPop { font-family: var(--jua); font-size: 20px; color: #fff; -webkit-text-stroke: 1px #C2552E; text-shadow: 0 2px 0 #C2552E; transform: translate(-50%, -100%); animation: bonkPop .9s ease-out forwards; white-space: nowrap; }
+@keyframes bonkPop { 0% { transform: translate(-50%, -60%) scale(.4); opacity: 0; } 25% { transform: translate(-50%, -110%) scale(1.25); opacity: 1; } 60% { transform: translate(-50%, -130%) scale(1); opacity: 1; } 100% { transform: translate(-50%, -170%) scale(.9); opacity: 0; } }
 
 /* 조작 버튼: 물젤리처럼 반투명 */
 #joy { background: radial-gradient(circle at 35% 28%, rgba(255,255,255,.55), rgba(190,230,255,.18) 55%, rgba(120,190,240,.14));
