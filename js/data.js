@@ -186,7 +186,7 @@ const GUESTBOOK = {
   dbUrl: 'https://mooljool-village-default-rtdb.asia-southeast1.firebasedatabase.app',
   // apiKey: Firebase 프로젝트 설정 > 일반 > '웹 API 키'. 익명 로그인에 써요. 비어 있으면 방명록은 읽기만 돼요.
   //   (이 키는 공개돼도 괜찮은 값이에요. 대신 README '방명록 켜기 ④'대로 키 사용처를 우리 사이트로 묶어 두세요)
-  apiKey: '',
+  apiKey: 'AIzaSyCb3T_UZdXZOVP5qW6v6rz4LExuizsXzJM',
   room: 'guestbook',   // 게시판 이름. 바꾸면 firebase/database.rules.json 안의 'guestbook'도 똑같이 바꿔서 다시 붙여 넣어야 해요
   maxNotes: 500,       // 들어올 때 받아 오는 최근 글 수 (게시판·'방명록 모아보기' 표). '몇 명 왔다감' 숫자는 전체 글 수예요
   maxLength: 40,       // 한 글의 최대 글자 수
