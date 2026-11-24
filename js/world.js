@@ -11,7 +11,7 @@ function initRenderer(canvas) {
   const r = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
   const LOWQ = /lowq|fast/.test(location.search), FAST = /fast/.test(location.search);
   const MOBILE = window.matchMedia && window.matchMedia('(pointer: coarse)').matches; // 휴대폰·태블릿은 조금 가볍게
-  r.setPixelRatio(FAST ? 0.3 : LOWQ ? 0.5 : Math.min(window.devicePixelRatio || 1, MOBILE ? 1.5 : 2));
+  r.setPixelRatio(FAST ? 0.3 : LOWQ ? 0.5 : Math.min(window.devicePixelRatio || 1, MOBILE ? 1.25 : 2));
   r.setSize(window.innerWidth, window.innerHeight, false);
   r.outputEncoding = THREE.sRGBEncoding;
   r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.0;
@@ -44,14 +44,16 @@ function initRenderer(canvas) {
 // 느린 기기 자동 조절: 3초 평균이 두 번 연달아 약 28fps보다 느리면 해상도를 한 단계(0.25)씩 낮추고,
 // 가장 낮은 단계에서도 느리면 그림자 해상도를 낮춰요. 다시 올리지는 않아요(화면이 깜빡이지 않게).
 // 30fps로 묶인 기기(절전 모드)는 건드리지 않게 기준을 28fps로 잡았어요. 주소 끝에 ?hq 를 붙이면 끔.
-const AQ = { acc: 0, n: 0, warm: 0, slow: 0, off: /hq/.test(location.search) };
+const AQ = { acc: 0, n: 0, warm: 0, slow: 0, off: /hq/.test(location.search),
+  // 평균 한 프레임이 이보다 오래 걸리면 화질을 낮춰요. 휴대폰은 30ms(약 33fps), 컴퓨터는 36ms
+  limit: (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ? 30 : 36 };
 function adaptQuality(ms) {
   if (AQ.off || document.hidden || !(ms > 0) || ms > 250) return;
   if (AQ.warm < 5000) { AQ.warm += ms; return; }   // 처음 5초는 셰이더 준비 때문에 느릴 수 있어서 건너뛰어요
   AQ.acc += ms; AQ.n++;
   if (AQ.acc < 3000) return;
   const avg = AQ.acc / AQ.n; AQ.acc = 0; AQ.n = 0;
-  if (avg < 36) { AQ.slow = 0; return; }
+  if (avg < AQ.limit) { AQ.slow = 0; return; }
   if (++AQ.slow < 2) return;   // 두 번(6초) 연달아 느릴 때만 낮춰요
   AQ.slow = 0;
   const r = W.renderer, pr = r.getPixelRatio(), sh = W.sun.shadow;

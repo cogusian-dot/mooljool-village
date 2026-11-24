@@ -108,7 +108,7 @@
 - 저장소 맨 위 = ver2(팀원 Rarae827/mooljoolday-village-ver2의 보안·최적화 버전)를 정식으로 씀
 - `ver1/` = 그 전 버전 백업. Firebase를 쓰지 않도록 `dbUrl`을 비워 체험 모드로 둠
 - 시작·완성 화면의 '만든 사람 김채현' 문구는 유지
-- 수상 사진은 상패를 든 손 사진(`award_plaque.webp`)만 씀. 팀원 얼굴이 나오는 사진(단체·시상식)은 공개 사이트라 빼기로 팀이 결정
+- 수상 사진(2026-11-24 사용자가 새로 줌): 팀(얼굴 이모지로 가림)·상패+수상자 안내문·본선 발표·시상식 4장, 2열 격자(4:3). EXIF 지우고 1400px webp로 저장
 
 ## 모바일 화면 (2026-11-24)
 - 도움말 `#help`: 맨 위 `#helpClose`(처음엔 '게임 시작!', ❔로 열면 '게임으로 돌아가기'), 내용은 `.helpPc`/`.helpTouch`로 나눠 `(pointer: coarse)`에 따라 하나만 보임, 카드는 스크롤됨
@@ -116,3 +116,4 @@
 - 조이스틱·✋·점프 버튼은 반투명 '물젤리' 스타일(style.css 맨 끝)
 - 요정 충돌: `npcCollide`/`npcBlocked`가 기물(W.colliders·boxes)·화분(`POT_R` = MINI_SCALE×0.125 ≈ 0.81 + NPC_R)·다른 요정·플레이어와 부딪힘. 걷다가 부딪히면 `npcBonk` → `n.fall`(FALL_T 1.7초) 동안 뒤로 발라당 넘어졌다 일어남(`fallPitch`, root.rotation.order 'YXZ'라 rotation.x가 앞뒤 기울기, 등이 안 묻히게 y를 살짝 띄움) + `SFX.bonk`·먼지. 일어나면 새 목적지. '꽁!' 글자는 사용자 요청으로 없앰
 - 부르는 이름: `nickName()`(data.js) 한글 3~4글자면 뒤 두 글자. 부를 때 `callName`(채현아/민지야), '~이야?' 물을 때 `J(nickName, '이야', '야')`(채현이야?/민지야?)
+- 휴대폰 성능: 조작 버튼에 backdrop-filter 안 씀(WebGL 위 흐림은 매 프레임 다시 그려 버벅임). 터치 화면 pixelRatio 최대 1.25. `adaptQuality` 기준 `AQ.limit` 휴대폰 30ms / 컴퓨터 36ms
