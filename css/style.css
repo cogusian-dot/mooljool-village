@@ -141,7 +141,7 @@ button:focus-visible, input:focus-visible { outline: 4px solid rgba(59,168,240,.
 .slot b:empty { display: none; }
 .slot.bump { animation: bump .45s cubic-bezier(.3,1.8,.5,1); }
 @keyframes bump { 40% { transform: scale(1.3, .85); } 70% { transform: scale(.92, 1.1); } }
-#joy { position: absolute; left: calc(26px + env(safe-area-inset-left)); bottom: calc(26px + env(safe-area-inset-bottom)); width: 132px; height: 132px; border-radius: 50%; background: rgba(255,248,239,.55); box-shadow: inset 0 6px 0 rgba(255,255,255,.6), inset 0 -8px 0 rgba(190,130,80,.15), 0 10px 24px -8px rgba(60,30,10,.3); touch-action: none; display: grid; place-items: center; backdrop-filter: blur(4px); }
+#joy { position: absolute; left: calc(26px + env(safe-area-inset-left)); bottom: calc(26px + env(safe-area-inset-bottom)); width: 132px; height: 132px; border-radius: 50%; background: rgba(255,248,239,.55); box-shadow: inset 0 6px 0 rgba(255,255,255,.6), inset 0 -8px 0 rgba(190,130,80,.15), 0 10px 24px -8px rgba(60,30,10,.3); touch-action: none; display: grid; place-items: center; }
 #joyKnob { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(180deg, #FFE08A, var(--yellow)); box-shadow: inset 0 4px 0 rgba(255,255,255,.6), inset 0 -5px 0 rgba(0,0,0,.12), 0 5px 0 var(--yellowD); pointer-events: none; transition: transform .08s; }
 #joy.act #joyKnob { transition: none; }
 #joy .hint { position: absolute; top: -26px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 14px; color: rgba(74,51,38,.75); }
@@ -525,11 +525,12 @@ button:focus-visible, input:focus-visible { outline: 4px solid rgba(59,168,240,.
 
 
 /* 조작 버튼: 물젤리처럼 반투명 */
-#joy { background: radial-gradient(circle at 35% 28%, rgba(255,255,255,.55), rgba(190,230,255,.18) 55%, rgba(120,190,240,.14));
-  box-shadow: inset 0 3px 8px rgba(255,255,255,.7), inset 0 -6px 12px rgba(80,150,210,.18), 0 0 0 1.5px rgba(255,255,255,.55), 0 8px 18px -8px rgba(40,80,120,.35); backdrop-filter: blur(3px); }
+#joy { background: radial-gradient(circle at 35% 28%, rgba(255,255,255,.6), rgba(190,230,255,.26) 55%, rgba(120,190,240,.22));
+  box-shadow: inset 0 3px 8px rgba(255,255,255,.7), inset 0 -6px 12px rgba(80,150,210,.18), 0 0 0 1.5px rgba(255,255,255,.55), 0 8px 18px -8px rgba(40,80,120,.35); }
 #joyKnob { background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.9), rgba(255,224,138,.6) 45%, rgba(242,182,50,.45)); box-shadow: inset 0 2px 4px rgba(255,255,255,.8), inset 0 -4px 8px rgba(200,140,20,.25), 0 0 0 1.5px rgba(255,255,255,.6), 0 4px 10px -4px rgba(120,80,0,.4); }
 #joy .hint { text-shadow: 0 1px 0 rgba(255,255,255,.7); }
-#actBtn, #jumpBtn { backdrop-filter: blur(3px); text-shadow: 0 1px 2px rgba(0,0,0,.25); }
+/* 3D 화면 위에 흐림(backdrop-filter)을 얹으면 휴대폰에서 매 프레임 다시 계산해 버벅여서 안 써요 */
+#actBtn, #jumpBtn { text-shadow: 0 1px 2px rgba(0,0,0,.3); }
 #actBtn { background: radial-gradient(circle at 35% 28%, rgba(255,255,255,.55), rgba(200,185,170,.38) 55%, rgba(160,140,120,.38));
   box-shadow: inset 0 3px 8px rgba(255,255,255,.7), inset 0 -6px 12px rgba(100,70,40,.18), 0 0 0 1.5px rgba(255,255,255,.55), 0 8px 18px -8px rgba(60,30,10,.35); }
 #actBtn.ready { background: radial-gradient(circle at 35% 28%, rgba(255,255,255,.6), rgba(255,150,90,.55) 50%, rgba(240,110,50,.55));
