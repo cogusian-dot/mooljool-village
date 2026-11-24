@@ -314,7 +314,7 @@ button:focus-visible, input:focus-visible { outline: 4px solid rgba(59,168,240,.
 .inside img { border-radius: 30px; box-shadow: 0 6px 0 #F0DCC8; cursor: zoom-in; }
 .parts { list-style: none; display: grid; gap: 8px; counter-reset: p; }
 .parts li { counter-increment: p; display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: center; background: #fff; border-radius: 20px; padding: 12px 16px; box-shadow: 0 4px 0 #F0DCC8; }
-.parts li::before { content: counter(p); width: 30px; height: 30px; border-radius: 50%; background: #5B4FC9; color: #fff; display: grid; place-items: center; font-weight: 900; font-size: 14px; }
+.parts li::before { content: counter(p); width: 30px; height: 30px; border-radius: 50%; background: var(--blue); color: #fff; display: grid; place-items: center; font-weight: 900; font-size: 14px; }
 .parts b { font-weight: 800; font-size: 16px; } .parts span { display: block; font-size: 13.5px; color: #8E7563; }
 .make { list-style: none; display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-top: 34px; counter-reset: m; }
 .make li { counter-increment: m; }
@@ -353,27 +353,27 @@ button:focus-visible, input:focus-visible { outline: 4px solid rgba(59,168,240,.
 .ibar .btn { font-size: 19px; white-space: nowrap; }
 
 /* ── 설명 페이지: 2026 GTEC 최종 포스터 내용 ── */
-.ptag { display: inline-block; background: #5B4FC9; color: #fff; font-weight: 800; font-size: 15px; padding: 6px 16px 7px; border-radius: 99px; margin-bottom: 14px; }
-.isec .lede b { color: #5B4FC9; }
+.ptag { display: inline-block; background: var(--blue); color: #fff; font-weight: 800; font-size: 15px; padding: 6px 16px 7px; border-radius: 99px; margin-bottom: 14px; }
+.isec .lede b { color: var(--blueD); }
 .picon li { grid-template-columns: 34px 1fr 64px; }
 .picon li img { width: 64px; height: 40px; object-fit: contain; }
 .pio { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 28px; }
 .pio li { background: #fff; border-radius: 22px; padding: 16px 18px; box-shadow: 0 5px 0 #F0DCC8; display: flex; gap: 12px; align-items: center; position: relative; }
-.pio li + li::before { content: '›'; position: absolute; left: -13px; top: 50%; transform: translateY(-50%); color: #5B4FC9; font-weight: 900; font-size: 22px; }
-.pio em { font-style: normal; flex: none; background: #5B4FC9; color: #fff; font-weight: 800; font-size: 14px; padding: 5px 12px 6px; border-radius: 99px; }
+.pio li + li::before { content: '›'; position: absolute; left: -13px; top: 50%; transform: translateY(-50%); color: var(--blueD); font-weight: 900; font-size: 22px; }
+.pio em { font-style: normal; flex: none; background: var(--blue); color: #fff; font-weight: 800; font-size: 14px; padding: 5px 12px 6px; border-radius: 99px; }
 .pio b { font-weight: 800; font-size: 15.5px; line-height: 1.45; word-break: keep-all; }
 .pstep { grid-template-columns: repeat(4, 1fr); }
-.pstep b::before { content: 'STEP ' counter(m) '  '; color: #5B4FC9; font-size: 13px; }
+.pstep b::before { content: 'STEP ' counter(m) '  '; color: var(--blueD); font-size: 13px; }
 .pimprove { display: grid; grid-template-columns: 1fr auto 1fr; gap: 24px; align-items: center; margin-top: 36px; }
 .pimprove figure { position: relative; }
 .pimprove figure img { border-radius: 24px; box-shadow: 0 5px 0 #F0DCC8; cursor: zoom-in; width: 100%; }
 .pimprove figcaption { position: absolute; left: 14px; bottom: 14px; background: #fff; padding: 5px 14px 6px; border-radius: 99px; font-weight: 700; font-size: 14px; }
-.parrow { font-size: 54px; font-weight: 900; color: #5B4FC9; }
-.pimpT { font-weight: 900; font-size: 20px; color: #5B4FC9; margin-bottom: 12px; }
+.parrow { font-size: 54px; font-weight: 900; color: var(--blueD); }
+.pimpT { font-weight: 900; font-size: 20px; color: var(--blueD); margin-bottom: 12px; }
 .pimprove ol { list-style: none; counter-reset: i; display: grid; gap: 10px; }
 .pimprove ol li { counter-increment: i; background: #fff; border-radius: 18px; padding: 14px 16px 14px 54px; position: relative; font-weight: 700; font-size: 16px; box-shadow: 0 4px 0 #F0DCC8; word-break: keep-all; }
-.pimprove ol li::before { content: counter(i); position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 26px; height: 26px; border-radius: 50%; background: #EEEBFF; color: #5B4FC9; display: grid; place-items: center; font-weight: 900; font-size: 13px; }
-.pnote { margin-top: 22px; background: #fff; border-radius: 99px; padding: 14px 24px; text-align: center; font-weight: 600; font-size: 15.5px; color: #5B4FC9; box-shadow: 0 4px 0 #F0DCC8; word-break: keep-all; }
+.pimprove ol li::before { content: counter(i); position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 26px; height: 26px; border-radius: 50%; background: #E3F3FD; color: var(--blueD); display: grid; place-items: center; font-weight: 900; font-size: 13px; }
+.pnote { margin-top: 22px; background: #fff; border-radius: 99px; padding: 14px 24px; text-align: center; font-weight: 600; font-size: 15.5px; color: var(--blueD); box-shadow: 0 4px 0 #F0DCC8; word-break: keep-all; }
 .pnote b { font-weight: 900; margin-right: 6px; }
 .pfinal { display: grid; grid-template-columns: 1.6fr 1fr; gap: 18px; margin-top: 34px; }
 .phero { position: relative; background: linear-gradient(160deg, #1F2440, #2E3557); border-radius: 30px; overflow: hidden; min-height: 520px; display: flex; flex-direction: column; justify-content: flex-end; }
@@ -386,7 +386,7 @@ button:focus-visible, input:focus-visible { outline: 4px solid rgba(59,168,240,.
 .pchips span { border: 1.5px solid rgba(255,255,255,.75); color: #fff; border-radius: 99px; padding: 6px 14px 7px; font-size: 13.5px; font-weight: 600; background: rgba(20,24,48,.55); }
 .pside { display: grid; grid-template-rows: auto 1fr; gap: 18px; }
 .papp { background: #fff; border-radius: 30px; padding: 22px; box-shadow: 0 6px 0 #F0DCC8; }
-.pappT { font-weight: 900; font-size: 18px; color: #5B4FC9; }
+.pappT { font-weight: 900; font-size: 18px; color: var(--blueD); }
 .pappS { font-size: 14px; color: #8E7563; margin-top: 4px; line-height: 1.5; word-break: keep-all; }
 .pappImgs { display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: 1fr 1fr; gap: 8px; margin-top: 14px; }
 .pappImgs img { width: 100%; height: 100%; object-fit: cover; object-position: top; border-radius: 14px; border: 1px solid #EEE4DA; cursor: zoom-in; aspect-ratio: 1170 / 2535; }
