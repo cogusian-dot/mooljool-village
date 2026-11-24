@@ -1391,7 +1391,7 @@ function goPlaza() {
 }
 
 // ═════════ 도움말 ═════════
-function showHelp(first) { $('#help').classList.add('show'); $('#help').dataset.first = first ? '1' : ''; }
+function showHelp(first) { $('#help').classList.add('show'); $('#help').dataset.first = first ? '1' : ''; $('#helpClose').textContent = first ? '게임 시작!' : '게임으로 돌아가기'; $('#help .clay').scrollTop = 0; }
 
 // ═════════ UI 연결 ═════════
 function buildUI() {
@@ -1425,9 +1425,6 @@ function buildUI() {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     if (GB.isOpen() || MP.menuOpen()) return;
     G.keys[e.code] = true;
-    // 숫자키 1~6: 가방 칸 고르기 (같은 키를 다시 누르면 내려놓기)
-    const dm = /^(Digit|Numpad)([1-6])$/.exec(e.code);
-    if (dm && !e.repeat) { if (selectSlot(+dm[2] - 1)) { e.preventDefault(); return; } }
     // 게임 중 스페이스는 점프 (대화 중이면 대화 넘기기). 행동은 E · Enter · Z
     if (e.code === 'Space' && G.mode === 'play' && !$('#help').classList.contains('show')) {
       e.preventDefault(); if (!e.repeat && !advanceDialog()) jump(); return;
@@ -1457,9 +1454,8 @@ function buildUI() {
     knob.style.transform = `translate(${dx}px, ${dy}px)`;
     G.joy.x = dx / R; G.joy.y = dy / R;
   }
-  // 가방 칸을 누르거나 탭해도 골라져요. 칸마다 숫자키 표시
+  // 가방 칸을 누르거나 탭하면 골라져요
   document.querySelectorAll('#inventory .slot').forEach((q, i) => {
-    const n = document.createElement('i'); n.className = 'num'; n.textContent = String(i + 1); q.appendChild(n);
     q.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); SFX.init(); selectSlot(i); });
   });
   // 점프 버튼 (터치 화면)

@@ -481,8 +481,48 @@ button:focus-visible, input:focus-visible { outline: 4px solid rgba(59,168,240,.
 @media (pointer: fine) { #gl { cursor: grab; } #gl:active { cursor: grabbing; } }
 /* 가방 칸이 숨을 때 세로 화면에서 아래로 다 안 내려가 비쳐 보이던 것 → 완전히 투명하게 */
 #inventory:not(.show) { opacity: 0; pointer-events: none; }
-/* 가방 칸 고르기: 고른 칸은 주황 테두리 + 살짝 위로, 왼쪽 위에 숫자키(마우스 쓰는 화면에서만) */
+/* 가방 칸 고르기: 고른 칸은 주황 테두리 + 살짝 위로 */
 .slot { cursor: pointer; }
 .slot.sel { opacity: 1; filter: none; background: #FFF4E0; box-shadow: 0 0 0 3px var(--orange), 0 6px 0 var(--orangeD); transform: translateY(-4px); }
-.slot .num { position: absolute; left: 3px; top: 1px; font-style: normal; font-size: 11px; line-height: 1; color: rgba(110,70,40,.55); pointer-events: none; }
-@media (pointer: coarse) { .slot .num { display: none; } }
+
+/* 도움말: 게임 시작 버튼을 맨 위에, 내용이 길면 스크롤. 컴퓨터/터치 설명을 따로 보여 줘요 */
+#help .clay { max-height: calc(100dvh - 36px); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+#help #helpClose { display: block; margin: 0 auto 14px; min-width: 200px; }
+#help .helpGrid { margin: 16px 0 4px; }
+.helpTouch { display: none; }
+@media (pointer: coarse) { .helpPc { display: none; } .helpTouch { display: grid; } }
+
+/* 터치 화면: 가방은 왼쪽 위에 작게(가진 물건만), 위쪽 버튼도 작게 */
+@media (pointer: coarse) {
+  #inventory { left: calc(10px + env(safe-area-inset-left)); top: calc(10px + env(safe-area-inset-top)); bottom: auto; transform: translateY(-160%); gap: 4px; padding: 4px 6px; border-radius: 16px; }
+  #inventory.show { transform: none; }
+  #inventory .bagIcon { display: none; }
+  #inventory .slot { width: 32px; height: 32px; font-size: 17px; border-radius: 11px; }
+  #inventory .slot svg { width: 20px; height: 20px; }
+  #inventory .slot:not(.on):not(.sel) { display: none; }
+  #inventory .slot b { min-width: 17px; height: 17px; padding: 0 4px; font-size: 11px; right: -4px; bottom: -4px; border-radius: 9px; }
+  #inventory .slot.sel { transform: translateY(-2px); box-shadow: 0 0 0 2px var(--orange), 0 3px 0 var(--orangeD); }
+  #inventory.show:not(:has(.slot.on)) { opacity: 0; pointer-events: none; }
+  .round { width: 38px; height: 38px; font-size: 17px; border-radius: 13px; }
+  .round small { font-size: 9px; }
+  .round.off::after { width: 26px; height: 4px; }
+  #topBtns { gap: 6px; top: calc(10px + env(safe-area-inset-top)); right: calc(10px + env(safe-area-inset-right)); }
+  #objective { top: calc(54px + env(safe-area-inset-top)); }
+}
+@media (pointer: coarse) and (max-height: 480px) {
+  #objective { top: calc(8px + env(safe-area-inset-top)); left: calc(10px + env(safe-area-inset-left)); max-width: calc(100vw - 270px); }
+  #inventory { top: calc(58px + env(safe-area-inset-top)); }
+}
+
+/* 조작 버튼: 물젤리처럼 반투명 */
+#joy { background: radial-gradient(circle at 35% 28%, rgba(255,255,255,.55), rgba(190,230,255,.18) 55%, rgba(120,190,240,.14));
+  box-shadow: inset 0 3px 8px rgba(255,255,255,.7), inset 0 -6px 12px rgba(80,150,210,.18), 0 0 0 1.5px rgba(255,255,255,.55), 0 8px 18px -8px rgba(40,80,120,.35); backdrop-filter: blur(3px); }
+#joyKnob { background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.9), rgba(255,224,138,.6) 45%, rgba(242,182,50,.45)); box-shadow: inset 0 2px 4px rgba(255,255,255,.8), inset 0 -4px 8px rgba(200,140,20,.25), 0 0 0 1.5px rgba(255,255,255,.6), 0 4px 10px -4px rgba(120,80,0,.4); }
+#joy .hint { text-shadow: 0 1px 0 rgba(255,255,255,.7); }
+#actBtn, #jumpBtn { backdrop-filter: blur(3px); text-shadow: 0 1px 2px rgba(0,0,0,.25); }
+#actBtn { background: radial-gradient(circle at 35% 28%, rgba(255,255,255,.55), rgba(200,185,170,.38) 55%, rgba(160,140,120,.38));
+  box-shadow: inset 0 3px 8px rgba(255,255,255,.7), inset 0 -6px 12px rgba(100,70,40,.18), 0 0 0 1.5px rgba(255,255,255,.55), 0 8px 18px -8px rgba(60,30,10,.35); }
+#actBtn.ready { background: radial-gradient(circle at 35% 28%, rgba(255,255,255,.6), rgba(255,150,90,.55) 50%, rgba(240,110,50,.55));
+  box-shadow: inset 0 3px 8px rgba(255,255,255,.75), inset 0 -6px 12px rgba(180,60,10,.25), 0 0 0 1.5px rgba(255,255,255,.6), 0 8px 18px -8px rgba(120,40,0,.4); }
+#jumpBtn { background: radial-gradient(circle at 35% 28%, rgba(255,255,255,.6), rgba(120,190,240,.5) 50%, rgba(70,160,230,.5));
+  box-shadow: inset 0 3px 8px rgba(255,255,255,.75), inset 0 -6px 12px rgba(30,90,150,.22), 0 0 0 1.5px rgba(255,255,255,.6), 0 8px 18px -8px rgba(30,40,80,.35); }
