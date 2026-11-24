@@ -174,7 +174,9 @@ const CHAR_BY_ID = Object.fromEntries(CHARACTERS.map(c => [c.id, c]));
 // 한국어 조사
 function hasJong(s) { const c = s.charCodeAt(s.length - 1); if (c < 0xAC00 || c > 0xD7A3) return false; return (c - 0xAC00) % 28 !== 0; }
 function J(s, a, b) { return s + (hasJong(s) ? a : b); }
-function callName(s) { return J(s, '아', '야'); }
+// 부르는 이름: 한글 3~4글자 이름(성+이름)은 뒤 두 글자만 (김채현 → 채현). 받침이 있으면 '아', 없으면 '야' (채현아 / 민지야)
+function nickName(s) { s = String(s || ''); return /^[가-힣]{3,4}$/.test(s) ? s.slice(-2) : s; }
+function callName(s) { return J(nickName(s), '아', '야'); }
 function plantShort(seed) { return seed.short || seed.name; }
 
 
