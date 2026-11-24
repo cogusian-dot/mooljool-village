@@ -73,7 +73,7 @@
 - 둥근 지평선(`CURVE_PROJ`, models.js): 예전엔 '카메라 깊이'로 휘어서 시점을 돌리면 지형이 따라 움직였음 → 지금은 **지도 중심 기준 월드 공간**에서 휨: `U_CC`(중심 xz)에서 `U_D0`보다 먼 곳만 y -= `U_CURVE`·(d−d0)². `setCurveZone('village'|'plaza')`를 매 프레임 `updateCamera`에서 호출(마을 0,0 d0 34 / 광장 0,−170 d0 19). 걸어 다니는 곳은 평평해서 그림자·충돌과 어긋나지 않음
   - `worldToScreen`(이름표·! 표시)도 같은 식. 별도 렌더러(설명 페이지 뷰어, 방명록 썸네일)는 원점에 모델을 두므로 `renderFlat()`으로 휘지 않게 그림
 
-- 가방 칸 고르기: 숫자키 1~6(Digit/Numpad) 또는 칸 누르기 → `selectSlot(i)`, `G.sel`(SLOT_KEYS 순서 apple·bucket·water·ladder·crystal·nutrient). 같은 키 다시 → 내려놓기, 없는 물건은 deny+toast, 다 쓰면 `refreshSel`이 자동 해제. 게임 중·마을·가방이 보일 때만(광장 메뉴의 1~3은 메뉴 열렸을 때 먼저 처리)
+- 가방 칸 고르기: 칸 누르기/탭 → `selectSlot(i)`(숫자키 1~6은 사용자 요청으로 없앰), `G.sel`(SLOT_KEYS 순서 apple·bucket·water·ladder·crystal·nutrient). 같은 키 다시 → 내려놓기, 없는 물건은 deny+toast, 다 쓰면 `refreshSel`이 자동 해제. 게임 중·마을·가방이 보일 때만(광장 메뉴의 1~3은 메뉴 열렸을 때 먼저 처리)
   - 사과·사다리·반짝이·양분은 오른손에 듦(`updateHeld`, 메시는 `HELD` 캐시, body에 붙이고 손 위치 따라감). 양동이·물은 지금처럼 머리에 인 양동이. 다른 물건을 들면 머리 양동이는 숨김. 사용은 여전히 E로 자동(선택과 무관)
 
 ## 게임 진행 변경 (2026-11-22)
@@ -109,3 +109,8 @@
 - `ver1/` = 그 전 버전 백업. Firebase를 쓰지 않도록 `dbUrl`을 비워 체험 모드로 둠
 - 시작·완성 화면의 '만든 사람 김채현' 문구는 유지
 - 수상 사진은 상패를 든 손 사진(`award_plaque.webp`)만 씀. 팀원 얼굴이 나오는 사진(단체·시상식)은 공개 사이트라 빼기로 팀이 결정
+
+## 모바일 화면 (2026-11-24)
+- 도움말 `#help`: 맨 위 `#helpClose`(처음엔 '게임 시작!', ❔로 열면 '게임으로 돌아가기'), 내용은 `.helpPc`/`.helpTouch`로 나눠 `(pointer: coarse)`에 따라 하나만 보임, 카드는 스크롤됨
+- 터치 화면(`pointer: coarse`): 가방 `#inventory`는 왼쪽 위에 작게, 가진 물건(`.slot.on`)만 보이고 가방 아이콘 숨김. 위쪽 `.round` 버튼 38px. 목표 안내는 그 아래(54px). 가로 화면에선 목표 안내가 맨 위, 가방은 그 아래
+- 조이스틱·✋·점프 버튼은 반투명 '물젤리' 스타일(style.css 맨 끝)

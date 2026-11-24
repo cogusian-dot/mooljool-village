@@ -7,10 +7,10 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>물줄때 마을 · 땀땀이와 씨앗 이야기</title>
-<link rel="stylesheet" href="css/fonts.css?v=20261124b">
-<link rel="stylesheet" href="css/style.css?v=20261124b">
-<link rel="stylesheet" href="css/guestbook.css?v=20261124b">
-<link rel="stylesheet" href="css/multiplayer.css?v=20261124b">
+<link rel="stylesheet" href="css/fonts.css?v=20261124c">
+<link rel="stylesheet" href="css/style.css?v=20261124c">
+<link rel="stylesheet" href="css/guestbook.css?v=20261124c">
+<link rel="stylesheet" href="css/multiplayer.css?v=20261124c">
 </head>
 <body>
 <canvas id="gl"></canvas>
@@ -112,17 +112,26 @@
 <!-- 도움말 -->
 <section id="help">
   <div class="clay">
+    <button class="btn orange" id="helpClose">게임 시작!</button>
     <h3>이렇게 놀아요</h3>
-    <div class="helpGrid">
-      <kbd>WASD · 방향키</kbd><span>마을을 걸어 다녀요 (Shift는 달리기)</span>
-      <kbd>E · Enter</kbd><span>말 걸기, 흔들기, 물 뜨기, 돌멩이 던지기, 사다리 오르기</span>
+    <!-- 컴퓨터(마우스·키보드)용 -->
+    <div class="helpGrid helpPc">
+      <kbd>WASD · 방향키</kbd><span>걷기 (Shift 누르면 달리기)</span>
+      <kbd>E · Enter</kbd><span>말 걸기 · 물 뜨기 같은 행동</span>
       <kbd>스페이스</kbd><span>점프</span>
-      <kbd>🖱️ 끌기</kbd><span>화면을 끌면 시점이 돌아가요. 마우스 휠로 확대·축소, 더블클릭하면 처음 시점으로</span>
-      <kbd>🕹️ · ✋ · ⤴</kbd><span>터치 화면에서는 왼쪽 조이스틱으로 이동, 오른쪽 버튼으로 행동·점프. 빈 화면을 다른 손가락으로 끌면 이동하면서 시점을 돌릴 수 있어요. 두 손가락으로 벌리고 오므리면 확대·축소 (두 번 탭하면 처음 시점)</span>
-      <kbd>! 표시</kbd><span>다음에 가 볼 곳이에요</span>
-      <kbd>⛲ 광장</kbd><span>식물을 다 키우면 열려요. 친구들과 만나고 방명록을 남기는 곳이에요</span>
+      <kbd>🖱️ 끌기 · 휠</kbd><span>시점 돌리기 · 확대/축소</span>
+      <kbd>! 표시</kbd><span>다음에 가 볼 곳</span>
+      <kbd>⛲ 광장</kbd><span>식물을 다 키우면 열려요</span>
     </div>
-    <button class="btn orange" id="helpClose">알겠어요!</button>
+    <!-- 휴대폰·태블릿(터치)용 -->
+    <div class="helpGrid helpTouch">
+      <kbd>🕹️ 왼쪽</kbd><span>끌어서 걷기</span>
+      <kbd>✋ 오른쪽</kbd><span>말 걸기 · 물 뜨기 같은 행동</span>
+      <kbd>⤴ 점프</kbd><span>점프</span>
+      <kbd>👆 화면 끌기</kbd><span>시점 돌리기 (두 손가락으로 확대/축소)</span>
+      <kbd>! 표시</kbd><span>다음에 가 볼 곳</span>
+      <kbd>⛲ 광장</kbd><span>식물을 다 키우면 열려요</span>
+    </div>
   </div>
 </section>
 
@@ -350,20 +359,20 @@
 </section>
 <div id="lightbox"><img id="lbImg" alt=""></div>
 
-<script src="lib/three/three.min.js?v=20261124b"></script>
-<script src="lib/three/GLTFLoader.js?v=20261124b"></script>
-<script src="lib/three/OrbitControls.js?v=20261124b"></script>
-<script src="lib/three/BufferGeometryUtils.js?v=20261124b"></script>
-<script src="lib/meshopt/meshopt_decoder.js?v=20261124b"></script>
-<script src="js/audio.js?v=20261124b"></script>
-<script src="js/data.js?v=20261124b"></script>
-<script src="js/models.js?v=20261124b"></script>
-<script src="js/world.js?v=20261124b"></script>
-<script src="js/game.js?v=20261124b"></script>
-<script src="js/plaza.js?v=20261124b"></script>
-<script src="js/info.js?v=20261124b"></script>
-<script src="js/net.js?v=20261124b"></script>
-<script src="js/guestbook.js?v=20261124b"></script>
-<script src="js/multiplayer.js?v=20261124b"></script>
+<script src="lib/three/three.min.js?v=20261124c"></script>
+<script src="lib/three/GLTFLoader.js?v=20261124c"></script>
+<script src="lib/three/OrbitControls.js?v=20261124c"></script>
+<script src="lib/three/BufferGeometryUtils.js?v=20261124c"></script>
+<script src="lib/meshopt/meshopt_decoder.js?v=20261124c"></script>
+<script src="js/audio.js?v=20261124c"></script>
+<script src="js/data.js?v=20261124c"></script>
+<script src="js/models.js?v=20261124c"></script>
+<script src="js/world.js?v=20261124c"></script>
+<script src="js/game.js?v=20261124c"></script>
+<script src="js/plaza.js?v=20261124c"></script>
+<script src="js/info.js?v=20261124c"></script>
+<script src="js/net.js?v=20261124c"></script>
+<script src="js/guestbook.js?v=20261124c"></script>
+<script src="js/multiplayer.js?v=20261124c"></script>
 </body>
 </html>
