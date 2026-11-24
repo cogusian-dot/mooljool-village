@@ -330,20 +330,20 @@ function npcBlocked(n, q) {
   for (const m of G.npcs) { if (Math.hypot(q.x - m.pot.position.x, q.z - m.pot.position.z) < POT_R + r) return true; if (m !== n && Math.hypot(q.x - m.root.position.x, q.z - m.root.position.z) < 1) return true; }
   return false;
 }
+// 부딪히면 뒤로 발라당 넘어졌다가 일어나요 (FALL_T초 동안)
+const FALL_T = 1.7;
 function npcBonk(n) {
-  n.timer = 0.6 + Math.random() * 0.6;   // 부딪히면 곧 다른 곳으로 가요
-  if (n.bonkCd > 0) return;
-  n.bonkCd = 1.8; n.hop = 0.22;
+  if (n.bonkCd > 0 || n.fall > 0) { n.timer = Math.min(n.timer, 0.3); return; }
+  n.bonkCd = FALL_T + 1.5; n.fall = FALL_T;
   const p = n.root.position;
-  if (G.player && Math.hypot(G.pos.x - p.x, G.pos.z - p.z) < 14) {
-    SFX.play('bonk'); burst('puff', V3(p.x, 0.9, p.z), 3);
-    worldToScreen(p.clone().add(V3(0, 1.9, 0)), _s);
-    if (_s.visible) {
-      const e = document.createElement('div'); e.className = 'bonkPop'; e.textContent = '꽁!';
-      e.style.left = _s.x + 'px'; e.style.top = _s.y + 'px'; $('#labels').appendChild(e);
-      setTimeout(() => e.remove(), 900);
-    }
-  }
+  if (G.player && Math.hypot(G.pos.x - p.x, G.pos.z - p.z) < 14) { SFX.play('bonk'); burst('puff', V3(p.x, 0.5, p.z), 4); }
+}
+// 넘어진 각도(뒤로 젖혀지는 양, 0~1.45 rad): 0.25초 만에 벌러덩 → 누워서 버둥 → 0.5초 동안 일어나며 살짝 앞으로
+function fallPitch(e) {
+  if (e < 0.25) { const k = e / 0.25; return 1.45 * (1 - (1 - k) * (1 - k)); }
+  if (e < 1.1) return 1.45 + Math.sin((e - 0.25) * 18) * 0.04;
+  if (e < 1.55) { const k = (e - 1.1) / 0.45; return 1.45 * (1 - k * k * (3 - 2 * k)) - Math.sin(k * Math.PI) * 0.08; }
+  return 0;
 }
 function facePoint(p) { G.yaw = Math.atan2(p.x - G.pos.x, p.z - G.pos.z); }
 
@@ -398,7 +398,7 @@ function buildNPCs() {
   for (const it of list) {
     if (!it.def) continue;
     const root = buildCharacter(it.def);
-    root.position.copy(it.home); root.rotation.y = Math.atan2(-it.home.x, -it.home.z) * 0.5;
+    root.position.copy(it.home); root.rotation.order = 'YXZ'; root.rotation.y = Math.atan2(-it.home.x, -it.home.z) * 0.5;   // YXZ: rotation.x가 제자리에서 앞뒤로 기울기(넘어지기)
     W.scene.add(root);
     const pot = makeTtami(MINI_SCALE);
     const side = it.home.x > 0 ? -1 : 1;
@@ -422,6 +422,9 @@ function updateNPCs(dt, t) {
         n.cheer = (n.cheer || 0) - dt;
         if (n.cheer <= 0) { n.cheer = 0.9 + Math.random() * 0.8; n.hop = 0.45; if (Math.random() < 0.35) burst('confetti', V3(p.x, 2.4, p.z), 5); }
       }
+    } else if (n.fall > 0) {   // 발라당 넘어졌다 일어나는 중엔 안 움직여요
+      n.fall -= dt;
+      if (n.fall <= 0) { n.fall = 0; n.timer = 0; n.hop = 0.25; }
     } else if (n.sad > 0) {
       n.sad -= dt; n.facing = Math.atan2(G.pos.x - p.x, G.pos.z - p.z);
       n.tear = (n.tear || 0) - dt;
@@ -455,6 +458,9 @@ function updateNPCs(dt, t) {
     const sadNow = n.sad > 0 && !n.celebrate;
     animateCharacter(n.root, t + n.home.x, speed, { hop: hopY, squash: sadNow ? 0.13 + Math.abs(Math.sin(t * 9)) * 0.03 : 0, wave: !sadNow && (n.wave > 0 || (dPlayer < 3.5 && dPlayer > 2.2 && !n.talking)) });
     n.root.userData.body.rotation.x = sadNow ? 0.22 : n.root.userData.body.rotation.x;
+    // 넘어진 자세: 발 쪽을 축으로 뒤로 젖히고, 등이 땅에 파묻히지 않게 살짝 띄워요
+    const pitch = n.fall > 0 ? fallPitch(FALL_T - n.fall) : 0;
+    n.root.rotation.x = -pitch; n.root.position.y = Math.sin(Math.min(pitch, 1.45)) * 0.36;
     if (sadNow) { const u = n.root.userData; u.hands[0].position.set(-0.24, 0.7, 0.42); u.hands[1].position.set(0.24, 0.7, 0.42); }
   }
 }
@@ -682,7 +688,7 @@ async function finishPlant() {
   burst('confetti', anchorW.clone().add(V3(0, 3, 0)), 60);
   burst('sparkle', anchorW.clone().add(V3(0, 2, 0)), 30);
   // 모든 요정이 땀땀이 앞에 동그랗게 모여요
-  G.npcs.forEach((n, i) => { const a = Math.PI * 0.5 + (i - (G.npcs.length - 1) / 2) * (Math.PI * 1.5 / Math.max(1, G.npcs.length - 1)); n.sad = 0; n.working = false; n.celebrate = V3(Math.cos(a) * 5.0, 0, Math.sin(a) * 5.0); });
+  G.npcs.forEach((n, i) => { const a = Math.PI * 0.5 + (i - (G.npcs.length - 1) / 2) * (Math.PI * 1.5 / Math.max(1, G.npcs.length - 1)); n.sad = 0; n.fall = 0; n.working = false; n.celebrate = V3(Math.cos(a) * 5.0, 0, Math.sin(a) * 5.0); });
   G.completed.add(G.seedId);
   camTo(V3(3.5, 8.5, 17), V3(2.8, 2.6, 0), 1.6);
   await wait(2600);
