@@ -4,7 +4,14 @@
 THREE.ColorManagement.legacyMode = false;
 
 // 둥글게 휘는 지평선(동물의 숲 느낌)
-const U_CURVE = { value: 0.0042 }, U_D0 = { value: 15 };
+// 둥근 지평선: 지도 한가운데(U_CC)에서 U_D0보다 먼 곳만 아래로 휘어요(작은 행성처럼).
+// 예전에는 '카메라에서의 거리'로 휘어서 시점을 돌리면 지형이 따라 움직였어요 → 지금은 지도 기준이라 시점과 상관없이 고정이에요.
+// 걸어 다니는 곳(마을 반지름 31, 광장 15.6)은 휘지 않아서 평평해요.
+const U_CURVE = { value: 0.0042 }, U_D0 = { value: 34 }, U_CC = { value: new THREE.Vector2(0, 0) };
+const CURVE_ZONES = { village: { x: 0, z: 0, d0: 34, k: 0.0042 }, plaza: { x: 0, z: -170, d0: 19, k: 0.0042 } };
+function setCurveZone(name) { const z = CURVE_ZONES[name]; U_CC.value.set(z.x, z.z); U_D0.value = z.d0; U_CURVE.value = z.k; }
+// 따로 쓰는 작은 렌더러(설명 페이지 3D 뷰어, 방명록 썸네일)는 원점에 모델을 두니까 휘지 않게 그려요
+function renderFlat(r, scene, cam) { const k = U_CURVE.value; U_CURVE.value = 0; r.render(scene, cam); U_CURVE.value = k; }
 
 const BUMP = (() => {
   const c = document.createElement('canvas'); c.width = c.height = 256;
@@ -27,19 +34,20 @@ const BUMP = (() => {
 })();
 
 const CURVE_PROJ = `
-vec4 mvPosition = vec4( transformed, 1.0 );
+vec4 cwPos = vec4( transformed, 1.0 );
 #ifdef USE_INSTANCING
-  mvPosition = instanceMatrix * mvPosition;
+  cwPos = instanceMatrix * cwPos;
 #endif
-mvPosition = modelViewMatrix * mvPosition;
-float cfz = max(0.0, -mvPosition.z - uD0);
-mvPosition.y -= uCurve * cfz * cfz;
+cwPos = modelMatrix * cwPos;
+float cfd = max(0.0, length(cwPos.xz - uCC) - uD0);
+cwPos.y -= uCurve * cfd * cfd;
+vec4 mvPosition = viewMatrix * cwPos;
 gl_Position = projectionMatrix * mvPosition;
 `;
 function clayPatch(m, rim = 0.11) {
   m.onBeforeCompile = (sh) => {
-    sh.uniforms.uCurve = U_CURVE; sh.uniforms.uD0 = U_D0;
-    sh.vertexShader = 'uniform float uCurve;\nuniform float uD0;\n' + sh.vertexShader.replace('#include <project_vertex>', CURVE_PROJ);
+    sh.uniforms.uCurve = U_CURVE; sh.uniforms.uD0 = U_D0; sh.uniforms.uCC = U_CC;
+    sh.vertexShader = 'uniform float uCurve;\nuniform float uD0;\nuniform vec2 uCC;\n' + sh.vertexShader.replace('#include <project_vertex>', CURVE_PROJ);
     sh.fragmentShader = sh.fragmentShader.replace('#include <dithering_fragment>',
       `#include <dithering_fragment>
        float rimF = 1.0 - clamp(dot(normalize(vNormal), normalize(vViewPosition)), 0.0, 1.0);
@@ -64,8 +72,8 @@ function M(color, o = {}) {
 }
 function clayPatch2(m) { // flat shading 용 (vNormal 없음)
   m.onBeforeCompile = (sh) => {
-    sh.uniforms.uCurve = U_CURVE; sh.uniforms.uD0 = U_D0;
-    sh.vertexShader = 'uniform float uCurve;\nuniform float uD0;\n' + sh.vertexShader.replace('#include <project_vertex>', CURVE_PROJ);
+    sh.uniforms.uCurve = U_CURVE; sh.uniforms.uD0 = U_D0; sh.uniforms.uCC = U_CC;
+    sh.vertexShader = 'uniform float uCurve;\nuniform float uD0;\nuniform vec2 uCC;\n' + sh.vertexShader.replace('#include <project_vertex>', CURVE_PROJ);
   };
   m.customProgramCacheKey = () => 'clayflat';
 }
@@ -115,7 +123,16 @@ function leafGeo(len, wid, cup = 0.3, droop = 0.2, tipSharp = 0.3) {
   g.computeVertexNormals();
   return g;
 }
-function mergeByMaterial(group) {
+// 카메라가 뚫고 들어가면 안 되는 물체 (구역별). 합쳐진 큰 메시 대신 합치기 전 부품을 그대로 써서 광선 검사가 가벼워요
+const CAM_OCCLUDERS = { village: [], plaza: [] };
+function isOccluder(o) {
+  if (!o.isMesh || !o.visible || o.castShadow === false || (o.material && o.material.transparent)) return false;
+  const g = o.geometry; if (!g.boundingSphere) g.computeBoundingSphere();
+  const s = o.matrixWorld.getMaxScaleOnAxis ? o.matrixWorld.getMaxScaleOnAxis() : 1;
+  return g.boundingSphere.radius * s > 0.3;   // 꽃·풀 같은 작은 것은 빼요(시점이 들썩이지 않게)
+}
+function addOccluders(zone, root) { root.updateMatrixWorld(true); root.traverse(o => { if (isOccluder(o)) CAM_OCCLUDERS[zone].push(o); }); }
+function mergeByMaterial(group, occZone) {
   // 같은 재질끼리 합쳐서 드로우콜 줄이기
   group.updateMatrixWorld(true);
   const inv = new THREE.Matrix4().copy(group.matrixWorld).invert();
@@ -123,6 +140,7 @@ function mergeByMaterial(group) {
   group.traverse(o => {
     if (!o.isMesh) return;
     const arr = buckets.get(o.material) || []; arr.push(o); buckets.set(o.material, arr);
+    if (occZone && isOccluder(o)) CAM_OCCLUDERS[occZone].push(o);   // 부품의 matrixWorld가 곧 월드 좌표(그룹이 원점)
   });
   const out = new THREE.Group();
   for (const [mat, meshes] of buckets) {
@@ -838,14 +856,11 @@ const TTAMI_MATS = {
 };
 function loadTtamiModel(cb) {
   const done = (scene) => { TTAMI_SRC = scene; cb && cb(); };
-  if (window.TTAMI_GLB) {
-    const bin = atob(window.TTAMI_GLB); const buf = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
-    new THREE.GLTFLoader().parse(buf.buffer, '', (gl) => done(gl.scene), (e) => { console.error(e); done(makeTtamiPlaceholder()); });
-    return;
-  }
-  // 정적 사이트 버전: 모델 파일을 assets/models/ttami.glb 에 두면 자동으로 불러와요
-  new THREE.GLTFLoader().load('assets/models/ttami.glb', (gl) => done(gl.scene), undefined, () => {
+  // 모델 파일 assets/models/ttami.glb 를 불러와요. 없으면 임시 모형
+  // ttami.glb는 gltfpack으로 압축(meshopt)돼 있어서 MeshoptDecoder(lib/meshopt)로 풀어요
+  const loader = new THREE.GLTFLoader();
+  if (window.MeshoptDecoder) loader.setMeshoptDecoder(MeshoptDecoder);
+  loader.load('assets/models/ttami.glb', (gl) => done(gl.scene), undefined, () => {
     console.warn('[물줄때] assets/models/ttami.glb 파일이 없어 임시 땀땀이 모형을 씁니다.');
     done(makeTtamiPlaceholder());
   });

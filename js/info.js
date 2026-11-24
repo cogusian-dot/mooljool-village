@@ -8,13 +8,11 @@ function playVideo(src, caption, onEnd) {
   SFX.pauseBgm(true);
   $('#videoCap').textContent = caption;
   ov.classList.add('show');
-  let triedData = false, finished = false;
+  let finished = false;
   const done = () => { if (finished) return; finished = true; v.onended = null; v.onerror = null; v.pause(); ov.classList.remove('show'); onEnd && onEnd(); };
   const start = () => { const p = v.play(); if (p && p.catch) p.catch(() => { v.muted = true; const q = v.play(); if (q && q.catch) q.catch(() => {}); }); };
   v.onended = done;
-  v.onerror = () => { // 영상을 못 여는 환경이면 다른 방식으로 한 번 더, 그래도 안 되면 다음 화면으로
-    if (!triedData && window.ASSET_B64 && window.ASSET_B64[src]) { triedData = true; v.src = assetURL(src, true); start(); } else done();
-  };
+  v.onerror = done;   // 영상을 못 열면 다음 화면으로
   $('#videoSkip').onclick = () => { SFX.play('click'); done(); };
   v.muted = false; v.src = assetURL(src); v.currentTime = 0;
   start();
@@ -50,6 +48,7 @@ function showAppFrame(src) {
 }
 function openApp() {
   SFX.play('click');
+  hydrateAssets($('#appView'));
   MV && MV.stop();
   $$('#info video').forEach(v => v.pause());
   playVideo('assets/video/app.mp4', '물줄때 앱', () => {
@@ -168,12 +167,12 @@ function initModelViewer() {
     if (u.drop) u.drop.position.y = u.dropBase.y + TTAMI_INFO.dropHideY * (1 - dropT) + (dropT > 0.95 ? Math.sin(t * 4) * 0.0015 : 0);
     updateTray(dt);
     ctl.update();
-    r.render(scene, cam);
+    renderFlat(r, scene, cam);
   }
   MV = {
     playTray,
-    stepTray(sec) { for (let i = 0; i < sec / 0.05; i++) updateTray(0.05); r.render(scene, cam); }, // 점검용: 시간 빨리 감기
-    shot(p, target) { cam.position.set(...p); ctl.target.set(...target); ctl.autoRotate = false; resize(); ctl.update(); r.render(scene, cam); }, // 점검용: 카메라 바로 옮기기
+    stepTray(sec) { for (let i = 0; i < sec / 0.05; i++) updateTray(0.05); renderFlat(r, scene, cam); }, // 점검용: 시간 빨리 감기
+    shot(p, target) { cam.position.set(...p); ctl.target.set(...target); ctl.autoRotate = false; resize(); ctl.update(); renderFlat(r, scene, cam); }, // 점검용: 카메라 바로 옮기기
     start() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } },
     stop() { if (raf) cancelAnimationFrame(raf); raf = null; },
     setDrop(v) { dropTarget = v ? 1 : 0; },
@@ -213,9 +212,8 @@ function buildInfo() {
   $('#infoApp').onclick = openApp;
   $('#infoReplay').onclick = replay;
   $('#appBack').onclick = backToInfo;
-  hydrateAssets($('#appView'));
   $('#appUrl').textContent = APP_LINK.url.split('?')[0];
-  if (window.WEB_BUILD) $('#appOffline').style.display = 'none';
+  $('#appOffline').style.display = 'none';   // 저장해 둔 앱 시안(app/mooljoolday_app.html)이 저장소에 없어서 숨겨요. 파일을 넣으면 이 줄을 지우세요
   $('#appOpen').onclick = () => { SFX.play('click'); openFigmaApp(); };
   $('#appOffline').onclick = () => { SFX.play('click'); showAppFrame('app/mooljoolday_app.html'); };
   $('#appLandingBack').onclick = () => { SFX.play('click'); $('#appView').classList.remove('frame'); };

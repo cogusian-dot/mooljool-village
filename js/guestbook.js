@@ -49,7 +49,7 @@ const GB = (() => {
       const box = new THREE.Box3().setFromObject(p), c = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3());
       const r = Math.max(sz.x, sz.y, sz.z) * 0.55, dist = r / Math.sin(THREE.MathUtils.degToRad(15));
       tCam.position.set(c.x + dist * 0.3, c.y + dist * 0.32, c.z + dist * 0.9); tCam.lookAt(c);
-      tR.render(tScene, tCam);
+      renderFlat(tR, tScene, tCam);
       const url = tR.domElement.toDataURL('image/png');
       tScene.remove(p); p.traverse(o => { if (o.geometry) o.geometry.dispose(); });
       return (thumbCache[seedId] = url);
@@ -209,7 +209,7 @@ const GB = (() => {
   }
   // 칠판: 지금까지 방명록을 남긴 사람 수
   function renderChalk() {
-    const n = notes.size;
+    const n = NET.total;
     if (n === shownCount) return;
     const grew = shownCount >= 0 && n > shownCount;
     shownCount = n; ui.chalkNum.textContent = n.toLocaleString('ko-KR');
@@ -219,15 +219,15 @@ const GB = (() => {
   // ─── 방명록 모아보기 (표) ───
   function fmtDate(ts) { if (!ts) return ''; const d = new Date(ts); return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`; }
   function renderList() {
-    const all = chronological(), frag = document.createDocumentFragment();
+    const all = chronological(), frag = document.createDocumentFragment(), skip = NET.total - all.length;   // 받아 온 건 최근 글뿐이라 번호를 전체 기준으로 맞춰요
     for (let i = all.length - 1; i >= 0; i--) {
       const [k, n] = all[i], tr = el('tr', myKeys.has(k) ? 'mine' : '');
-      tr.append(el('td', 'no', String(i + 1)), el('td', 'nm', trimTo(clean(n.name), 8)), el('td', 'msg', trimTo(clean(n.msg), 60)), el('td', 'dt', fmtDate(n.ts)));
+      tr.append(el('td', 'no', String(skip + i + 1)), el('td', 'nm', trimTo(clean(n.name), 8)), el('td', 'msg', trimTo(clean(n.msg), 60)), el('td', 'dt', fmtDate(n.ts)));
       frag.appendChild(tr);
     }
     ui.listBody.replaceChildren(frag);
     ui.listEmpty.style.display = all.length ? 'none' : '';
-    ui.listSum.textContent = `지금까지 ${all.length.toLocaleString('ko-KR')}명이 남겼어요 · 최근 글이 위에 있어요`;
+    ui.listSum.textContent = `지금까지 ${NET.total.toLocaleString('ko-KR')}명이 남겼어요 · 최근 글이 위에 있어요` + (skip > 0 ? ` (최근 ${all.length.toLocaleString('ko-KR')}개만 보여요)` : '');
   }
   function openList() {
     renderList();
@@ -241,7 +241,7 @@ const GB = (() => {
     const status = statusOf(), presence = presenceCount();
     const t = { connecting: '연결하는 중…', live: `실시간 연결됨 · 지금 ${presence}명이 마을에 있어요`, reconnecting: '연결이 끊겼어요 · 다시 연결하는 중…',
       denied: '게시판에 연결할 수 없어요 (데이터베이스 규칙 확인 필요)', local: `체험 모드 · 이 기기에서만 보여요 (${presence}개 창)` }[status] || '';
-    ui.status.querySelector('span').textContent = t;
+    ui.status.querySelector('span').textContent = t + (NET.mode === 'firebase' && !CFG.apiKey && status === 'live' ? ' · 지금은 읽기만 돼요' : '');
     ui.status.className = 'gbStatus ' + status;
   }
 
@@ -313,7 +313,8 @@ const GB = (() => {
       SFX.play('success');
     } catch (e) {
       console.warn('[방명록] 글 붙이기 실패', e);
-      ui.err.textContent = '글을 붙이지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.'; SFX.play('deny');
+      ui.err.textContent = (NET.mode === 'firebase' && !CFG.apiKey) ? '방명록 쓰기가 아직 준비되지 않았어요. (관리자: README 2-1의 apiKey 설정)'
+        : '글을 붙이지 못했어요. 인터넷 연결을 확인하고 잠시 뒤 다시 눌러 주세요.'; SFX.play('deny');
     } finally { ui.send.disabled = false; }
   }
 
@@ -415,7 +416,7 @@ const GB = (() => {
   return {
     init, build3D, open, close, isOpen, clean,
     get board3D() { return board3D; },
-    get count() { return notes.size; },
+    get count() { return NET.total; },
     get posted() { return myKeys.size > 0; },
     get status() { return statusOf(); },
     get presence() { return presenceCount(); },

@@ -12,15 +12,22 @@ const ease = { out: t => 1 - Math.pow(1 - t, 3), inOut: t => t < .5 ? 4 * t * t 
 const TTAMI_SCALE = 18, PLANT_SCALE_BIG = 3.0, MINI_SCALE = 6.5, PLANT_SCALE_MINI = 1.2;
 const SPAWN = V3(0, 0, 6.5);
 
+// 카메라 (플레이어를 따라다니며 둘레를 돌아요)
+const CAM_DIST = Math.hypot(16.3, 9.2), CAM_ELEV0 = Math.atan2(9.2, 16.3), CAM_ELEV_MIN = 0, CAM_ELEV_MAX = 1.2;   // 최소 0 = 수평: 카메라가 캐릭터 머리 높이(1.3)까지 내려와요(1인칭 눈높이 정도)
+const CAM_ZOOM_MIN = 0.4, CAM_ZOOM_MAX = 1.6;   // 줌: 기본 거리의 0.4배(가까이) ~ 1.6배(멀리)
+const wrapAngle = (a) => { a = (a + Math.PI) % (Math.PI * 2); if (a < 0) a += Math.PI * 2; return a - Math.PI; };
+// 점프: 처음 속도와 중력 (높이 약 1.1, 0.6초 정도)
+const JUMP_V = 7.2, JUMP_G = 24;
 const G = {
   mode: 'loading', render3D: true,
   name: '', charId: null, seedId: null, completed: new Set(),
   player: null, pos: SPAWN.clone(), yaw: Math.PI, speed: 0,
   ttami: null, floatDrop: null, npcs: [], pickups: [], particles: [], tweens: [],
-  inv: { apple: 0, water: 0, crystal: 0, nutrient: 0 }, flags: {}, posY: 0, onHill: false, inPlaza: false,
+  inv: { apple: 0, water: 0, crystal: 0, nutrient: 0 }, flags: {}, sel: null, posY: 0, onHill: false, inPlaza: false,
   stage: 0, reqIdx: 0, given: { w: 0, n: 0 }, requestActive: false,
   keys: {}, joy: { x: 0, y: 0 }, busy: false,
-  cam: { pos: V3(0, 14, 22), look: V3(0, 1, 0), mode: 'follow', tPos: V3(), tLook: V3(), k: 3 },
+  cam: { pos: V3(0, 14, 22), look: V3(0, 1, 0), mode: 'follow', tPos: V3(), tLook: V3(), k: 3, yaw: 0, elev: CAM_ELEV0, zoom: 1, drag: false },
+  jumpY: 0, jumpV: 0,
   shake: 0, treeShake: 0, swing: 0, swingTool: null, t: 0, stepPh: 0,
   hint: '',
 };
@@ -99,7 +106,7 @@ window.addEventListener('DOMContentLoaded', () => {
   loadTtamiModel(() => {
     buildWorld();
     MP.init(); GB.init();   // 마을 안 3D 방명록 게시판은 게임 중엔 숨김 (방명록은 타이틀·완성 창에서만)
-    G.ttami = makeTtami(TTAMI_SCALE); W.scene.add(G.ttami);
+    G.ttami = makeTtami(TTAMI_SCALE); W.scene.add(G.ttami); addOccluders('village', G.ttami);
     W.colliders.push({ x: 0, z: 0, r: 2.25 });
     G.floatDrop = makeFloatDrop(); W.scene.add(G.floatDrop);
     setTtamiPlant(G.ttami, 'sunflower', 3, PLANT_SCALE_BIG); // 타이틀용
@@ -116,8 +123,9 @@ let last = performance.now();
 const DT_CAP = /fast/.test(location.search) ? 0.15 : 0.05;
 function loop(now) {
   requestAnimationFrame(loop);
-  const dt = Math.min(DT_CAP, (now - last) / 1000); last = now;
+  const raw = now - last, dt = Math.min(DT_CAP, raw / 1000); last = now;
   if (!G.render3D) return;
+  adaptQuality(raw);
   G.t += dt;
   update(dt);
   W.renderer.render(W.scene, W.camera);
@@ -132,14 +140,17 @@ function update(dt) {
   for (const n of G.npcs) { updateTtami(n.pot, dt, t); }
   if (G.mode === 'play' && !G.busy && !G.onHill) movePlayer(dt);
   else G.speed *= Math.pow(0.001, dt);
+  updateJump(dt);
   if (G.player) {
-    G.player.position.set(G.pos.x, G.posY || 0, G.pos.z);
-    const dy = ((G.yaw - G.player.rotation.y + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
-    G.player.rotation.y += dy * Math.min(1, dt * 12);
+    G.player.position.set(G.pos.x, (G.posY || 0) + G.jumpY, G.pos.z);
+    // 가까운 쪽으로 돌아요. 회전값이 쌓이면 %가 음수를 내서 반대로 270° 돌던 버그 → wrapAngle로 계산하고 회전값도 -π~π로 유지
+    const dy = wrapAngle(G.yaw - G.player.rotation.y);
+    G.player.rotation.y = wrapAngle(G.player.rotation.y + dy * Math.min(1, dt * 12));
     if (G.playerWave > 0) G.playerWave -= dt;
     animateCharacter(G.player, t, G.speed, { hop: G.playerHop || 0, squash: G.playerSquash || 0, hold: G.sunHold, wave: G.playerWave > 0 });
     updateToolSwing(dt);
     updateHeadBucket(t);
+    updateHeld(t);
   }
   updateNPCs(dt, t);
   PZ.update(dt, t);
@@ -160,19 +171,60 @@ function updateCamera(dt, t) {
     const a = t * 0.07;
     c.tPos.set(Math.sin(a) * 30, 17, Math.cos(a) * 30); c.tLook.set(0, 2, 0); c.k = 1.5;
   } else if (c.mode === 'follow') {
-    c.tPos.set(G.pos.x, 10.5 + (G.posY || 0), G.pos.z + 14.5); c.tLook.set(G.pos.x, 1.3 + (G.posY || 0), G.pos.z - 1.8); c.k = 4;
+    // 플레이어 둘레를 도는 카메라: yaw(좌우)·elev(위아래)는 마우스/터치로 돌려요. yaw 0·elev 기본값이 예전 고정 시점과 같아요
+    const s = Math.sin(c.yaw), co = Math.cos(c.yaw), py = G.posY || 0;
+    c.tLook.set(G.pos.x - s * 1.8, 1.3 + py, G.pos.z - co * 1.8);
+    const D = CAM_DIST * c.zoom, h = D * Math.cos(c.elev);
+    c.tPos.set(c.tLook.x + s * h, c.tLook.y + D * Math.sin(c.elev), c.tLook.z + co * h);
+    keepTargetOutside(c);
+    c.k = c.drag ? 14 : 4;
   }
   const k = 1 - Math.exp(-dt * c.k);
   c.pos.lerp(c.tPos, k); c.look.lerp(c.tLook, k);
   cam.position.copy(c.pos);
   if (G.shake > 0) { G.shake -= dt; cam.position.x += (Math.random() - .5) * G.shake * 0.6; cam.position.y += (Math.random() - .5) * G.shake * 0.6; }
   cam.lookAt(c.look);
-  U_D0.value = c.pos.distanceTo(c.look) * 0.92;
-  const f = c.mode === 'follow' ? G.pos : c.look;
-  W.sun.position.set(f.x - 14, 30, f.z + 12); W.sun.target.position.set(f.x, 0, f.z);
+  setCurveZone(G.inPlaza ? 'plaza' : 'village');
+  updateSun();
+}
+// 카메라와 캐릭터 사이에 물체가 끼면 그 앞까지 당겨요(바로). 비켜나면 원래 거리로 천천히 돌아가요(위의 lerp)
+// 카메라가 갈 자리(tPos)가 맵 모델 '안'일 때만 캐릭터 쪽으로 당겨요(사이에 물체가 가로막는 것만으로는 당기지 않아요).
+// 지금 위치가 아니라 목표 위치로 판단해서, 카메라가 부드럽게 옮겨 가는 도중 벽을 스쳐도 걸려 멈추지 않아요.
+// 판별: 머리→목표 광선이 들어간 물체인데, 목표→머리 광선에는 안 잡히면(안쪽에서는 겉면이 안 보이니까) 목표가 그 안에 있는 것
+const _ray = new THREE.Raycaster(), _cdir = new THREE.Vector3(), _head = new THREE.Vector3(), _back = new THREE.Vector3();
+function keepTargetOutside(c) {
+  _head.set(G.pos.x, (G.posY || 0) + 1.5, G.pos.z);
+  const occ = CAM_OCCLUDERS[G.inPlaza ? 'plaza' : 'village'];
+  // 당긴 자리가 겹쳐 있는 다른 부품 안일 수 있어서, 밖으로 나올 때까지 몇 번 다시 검사해요
+  for (let it = 0; it < 4; it++) {
+    _cdir.subVectors(c.tPos, _head); const len = _cdir.length(); if (len <= 1.0) return;
+    _cdir.divideScalar(len);
+    _ray.set(_head, _cdir); _ray.near = 0.1; _ray.far = len;
+    const fwd = _ray.intersectObjects(occ, false);
+    if (!fwd.length) return;
+    _ray.set(c.tPos, _back.copy(_cdir).negate()); _ray.near = 0; _ray.far = len;
+    const seen = new Set(_ray.intersectObjects(occ, false).map(h => h.object));
+    const inside = fwd.find(h => !seen.has(h.object));
+    if (!inside) return;
+    c.tPos.copy(_head).addScaledVector(_cdir, Math.max(1.0, inside.distance - 0.6));
+  }
+}
+// 그림자: 캐릭터 주변만이 아니라 구역(마을·광장) 전체를 늘 덮어요
+let sunZone = '';
+function updateSun() {
+  const zone = G.inPlaza ? 'plaza' : 'village';
+  if (zone === sunZone) return;
+  sunZone = zone;
+  // 다른 구역은 숨겨요: 둥근 지평선으로 안 휘는 재질(벽돌·창문 불빛·간판)이 하늘에 떠 보였어요
+  for (const o of W.zoneObjs.village) o.visible = zone === 'village';
+  for (const o of W.zoneObjs.plaza) o.visible = zone === 'plaza';
+  const cx = zone === 'plaza' ? PLAZA.x : 0, cz = zone === 'plaza' ? PLAZA.z : 0, R = zone === 'plaza' ? 26 : 40;
+  W.sun.position.set(cx - 14, 30, cz + 12); W.sun.target.position.set(cx, 0, cz); W.sun.target.updateMatrixWorld();
+  const sc = W.sun.shadow.camera; sc.left = -R; sc.right = R; sc.top = R; sc.bottom = -R; sc.updateProjectionMatrix();
 }
 function camTo(pos, look, k = 2.5) { G.cam.mode = 'fixed'; G.cam.tPos.copy(pos); G.cam.tLook.copy(look); G.cam.k = k; }
 function camFollow() { G.cam.mode = 'follow'; }
+function camReset() { G.cam.yaw = 0; G.cam.elev = CAM_ELEV0; G.cam.zoom = 1; }   // 처음 시점(플레이어 뒤쪽 위)으로
 function camFocusTtami(close = false) {
   if (close) camTo(V3(2.5, 6.8, 13.5), V3(0, 2.6, 2), 2.2);
   else camTo(V3(3, 8, 16), V3(0, 2.8, 2), 2.2);
@@ -182,7 +234,7 @@ function camFocusTtami(close = false) {
 function spawnPlayer() {
   if (G.player) W.scene.remove(G.player);
   G.player = buildCharacter(CHAR_BY_ID[G.charId]);
-  G.pos.copy(SPAWN); G.yaw = Math.PI; G.player.rotation.y = Math.PI;
+  G.pos.copy(SPAWN); G.yaw = Math.PI; G.player.rotation.y = Math.PI; camReset(); G.jumpY = 0; G.jumpV = 0;
   W.scene.add(G.player);
   // 손 도구
   const hand = G.player.userData.hands[1];
@@ -202,6 +254,9 @@ function movePlayer(dt) {
   if (k.ArrowLeft || k.KeyA) x -= 1; if (k.ArrowRight || k.KeyD) x += 1;
   if (k.ArrowUp || k.KeyW) z -= 1; if (k.ArrowDown || k.KeyS) z += 1;
   x += G.joy.x; z += G.joy.y;
+  if (G.cam.yaw) {   // 화면 기준 방향 → 카메라가 돈 만큼 돌려서 월드 방향으로
+    const s = Math.sin(G.cam.yaw), c = Math.cos(G.cam.yaw), wx = x * c + z * s, wz = -x * s + z * c; x = wx; z = wz;
+  }
   const len = Math.hypot(x, z);
   const run = k.ShiftLeft || k.ShiftRight ? 1.5 : 1;
   const target = len > 0.1 ? 6.2 * run * Math.min(1, len) : 0;
@@ -215,11 +270,32 @@ function movePlayer(dt) {
   // 충돌
   for (let it = 0; it < 2; it++) {
     for (const c of W.colliders) pushOut(c.x, c.z, c.r + 0.45);
+    for (const b of W.boxes) pushOutBox(b, 0.45);
     for (const n of G.npcs) { pushOut(n.root.position.x, n.root.position.z, 0.95); pushOut(n.pot.position.x, n.pot.position.z, 0.85); }
   }
   if (G.inPlaza) { PZ.clampWalk(); return; }
   const d = Math.hypot(G.pos.x, G.pos.z);
   if (d > W.BOUND) { G.pos.x *= W.BOUND / d; G.pos.z *= W.BOUND / d; }
+}
+// ─── 점프 (스페이스 / 터치 화면의 점프 버튼) ───
+function canJump() { return G.mode === 'play' && !G.busy && !G.onHill && !G.sunHold && G.player && G.jumpY === 0 && G.jumpV === 0; }
+function jump() {
+  if (!canJump()) return false;
+  G.jumpV = JUMP_V; G.playerSquash = -0.12; SFX.play('jump'); return true;
+}
+function updateJump(dt) {
+  if (G.jumpV === 0 && G.jumpY === 0) { if (G.playerSquash && !G.onHill) G.playerSquash *= Math.pow(0.0005, dt); return; }
+  G.jumpV -= JUMP_G * dt; G.jumpY += G.jumpV * dt;
+  if (G.playerSquash) G.playerSquash *= Math.pow(0.02, dt);
+  if (G.jumpY <= 0) {   // 착지: 살짝 찌그러졌다 돌아와요
+    G.jumpY = 0; G.jumpV = 0; G.playerSquash = 0.18; SFX.play('land');
+    burst('puff', V3(G.pos.x, (G.posY || 0) + 0.1, G.pos.z), 4);
+  }
+}
+function pushOutBox(b, pr) {
+  const dx = G.pos.x - b.x, dz = G.pos.z - b.z, ox = b.hw + pr - Math.abs(dx), oz = b.hd + pr - Math.abs(dz);
+  if (ox <= 0 || oz <= 0) return;   // 상자(캐릭터 반지름만큼 넓힌) 밖
+  if (ox < oz) G.pos.x += dx < 0 ? -ox : ox; else G.pos.z += dz < 0 ? -oz : oz;   // 덜 파고든 쪽으로 밀어내요
 }
 function pushOut(cx, cz, r) {
   const dx = G.pos.x - cx, dz = G.pos.z - cz, d = Math.hypot(dx, dz);
@@ -245,7 +321,7 @@ function updateToolSwing(dt) {
 function updateHeadBucket(t) {
   const b = G.tools && G.tools.bucket; if (!b || G.swingTool === 'bucket') return;
   // 언덕에서 햇빛을 모을 때는 양동이를 가방에 넣어 둬요
-  const has = !!G.flags.bucket && ['play', 'cutscene', 'complete'].includes(G.mode) && !G.onHill && !G.sunHold && !G.inPlaza && !G.throwing;
+  const has = !!G.flags.bucket && ['play', 'cutscene', 'complete'].includes(G.mode) && !G.onHill && !G.sunHold && !G.inPlaza && !G.throwing && !heldInHand();
   b.visible = has; if (!has) return;
   const full = G.inv.water > 0, walk = Math.min(1, G.speed / 5);
   b.position.set(0, (G.headY || 1.0) + Math.abs(Math.sin(t * 12)) * 0.03 * walk, 0);
@@ -321,8 +397,8 @@ function updateNPCs(dt, t) {
       const dx = n.target.x - p.x, dz = n.target.z - p.z, d = Math.hypot(dx, dz);
       if (d > 0.15) { speed = 1.6; p.x += dx / d * speed * dt; p.z += dz / d * speed * dt; n.facing = Math.atan2(dx, dz); }
     }
-    const dy = ((n.facing - n.root.rotation.y + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
-    n.root.rotation.y += dy * Math.min(1, dt * 6);
+    const dy = wrapAngle(n.facing - n.root.rotation.y);
+    n.root.rotation.y = wrapAngle(n.root.rotation.y + dy * Math.min(1, dt * 6));
     n.hop = Math.max(0, n.hop - dt);
     const hopY = n.hop > 0 ? Math.abs(Math.sin(n.hop * 14)) * 0.45 : 0;
     n.wave = Math.max(0, n.wave - dt);
@@ -1001,6 +1077,51 @@ function hearts(pos) {
 
 // ═════════ 인벤토리 ═════════
 function showInventory() { $('#inventory').classList.add('show'); }
+// ─── 가방 칸 고르기 (숫자키 1~6 / 칸 누르기) → 고른 물건을 손에 들어요. 쓰는 건 지금처럼 E로 자동 ───
+const SLOT_KEYS = ['apple', 'bucket', 'water', 'ladder', 'crystal', 'nutrient'];
+const SLOT_NAMES = { apple: '사과', bucket: '양동이', water: '물', ladder: '사다리', crystal: '반짝이', nutrient: '햇빛 담은 반짝이' };
+function slotHas(k) {
+  if (k === 'bucket') return !!G.flags.bucket;
+  if (k === 'ladder') return !!G.flags.ladder && !G.flags.ladderPlaced;   // 언덕에 세운 사다리는 들 수 없어요
+  return (G.inv[k] || 0) > 0;
+}
+function selectSlot(i) {
+  const k = SLOT_KEYS[i];
+  if (!k || G.mode !== 'play' || G.inPlaza || !$('#inventory').classList.contains('show')) return false;
+  if (G.sel === k) { G.sel = null; SFX.play('bag'); refreshSel(); return true; }   // 다시 누르면 내려놓기
+  if (!slotHas(k)) { toast(k === 'ladder' && G.flags.ladderPlaced ? '사다리는 언덕에 세워 뒀어요' : `${J(SLOT_NAMES[k], '이', '가')} 아직 없어요`); SFX.play('deny'); return true; }
+  G.sel = k; SFX.play('pickup'); refreshSel();
+  const q = $(`.slot[data-k="${k}"]`); q.classList.remove('bump'); void q.offsetWidth; q.classList.add('bump');
+  return true;
+}
+function refreshSel() {
+  if (G.sel && !slotHas(G.sel)) G.sel = null;   // 다 쓰면 자동으로 내려놓기
+  document.querySelectorAll('#inventory .slot').forEach(q => q.classList.toggle('sel', q.dataset.k === G.sel));
+}
+// 손에 드는 물건(양동이·물은 지금처럼 머리에 인 양동이로 보여요)
+function heldInHand() { return G.sel && G.sel !== 'bucket' && G.sel !== 'water' ? G.sel : null; }
+const HELD = {};
+function heldMesh(k) {
+  if (HELD[k]) return HELD[k];
+  const g = new THREE.Group();
+  if (k === 'apple') { ell(g, M('#E5322E', { r: 0.35, rim: 0.25 }), 0.17, 0.16, 0.17, 0, 0, 0, 14); add(g, cyl(0.015, 0.015, 0.1, 6), M('#7A4A2E'), 0, 0.17, 0); ell(g, M('#5DB34F'), 0.07, 0.02, 0.04, 0.05, 0.19, 0, 8); }
+  else if (k === 'ladder') { const l = makeLadderMesh(1.6); l.scale.setScalar(0.42); l.position.set(0, -0.3, 0); g.add(l); }
+  else if (k === 'crystal') add(g, new THREE.OctahedronGeometry(0.17, 0), M('#7FE6F7', { r: 0.2, em: '#5FD8F0', ei: 0.55, nobump: true, rim: 0.4 })).scale.set(1, 1.4, 1);
+  else if (k === 'nutrient') add(g, new THREE.OctahedronGeometry(0.17, 0), M('#FFB32E', { r: 0.2, em: '#FF9A00', ei: 0.9, nobump: true, rim: 0.4 })).scale.set(1, 1.4, 1);
+  g.visible = false; return (HELD[k] = g);
+}
+function updateHeld(t) {
+  const k = heldInHand(), u = G.player.userData;
+  for (const [hk, m] of Object.entries(HELD)) if (hk !== k) m.visible = false;
+  const show = k && ['play', 'cutscene', 'complete'].includes(G.mode) && !G.onHill && !G.sunHold && !G.inPlaza && !G.throwing && !G.swingTool;
+  if (!show) return;
+  const m = heldMesh(k); if (m.parent !== u.body) u.body.add(m);
+  m.visible = true;
+  const h = u.hands[1];   // 오른손을 앞으로 내밀고 그 위에 올려요
+  h.position.z += 0.18; h.position.y += 0.08;
+  m.position.set(h.position.x - 0.06, h.position.y + (k === 'apple' ? 0.17 : 0.2), h.position.z + 0.08);
+  m.rotation.y = k === 'ladder' ? 0.3 : t * 1.2 * (k === 'apple' ? 0 : 1);
+}
 function refreshInventory() {
   const set = (k, v, show = true) => { const q = $(`.slot[data-k="${k}"]`); q.classList.toggle('on', show); const c = q.querySelector('b'); if (c) c.textContent = v; };
   set('apple', G.inv.apple, true);
@@ -1009,6 +1130,7 @@ function refreshInventory() {
   set('ladder', '', !!(G.flags.ladder || G.flags.ladderPlaced));
   set('crystal', G.inv.crystal, G.inv.crystal > 0 || !!G.flags.gotCrystal);
   set('nutrient', G.inv.nutrient, G.inv.nutrient > 0 || !!G.flags.gotCrystal);
+  refreshSel();
 }
 
 // ═════════ 대화창 ═════════
@@ -1177,7 +1299,7 @@ function renderSeedDetail() {
 }
 function stars(n) { return '★'.repeat(n) + '☆'.repeat(5 - n); }
 function buildSetupLists() {
-  $('#charGrid').innerHTML = CHARACTERS.map(c => `<button class="charCard" data-id="${c.id}"><img src="${assetURL('assets/chars/' + c.img + '.webp')}" alt=""><span>${c.name}</span></button>`).join('');
+  $('#charGrid').innerHTML = CHARACTERS.map(c => `<button class="charCard" data-id="${c.id}"><img src="${assetURL('assets/chars/' + c.img + '.webp')}" alt="" loading="lazy" decoding="async"><span>${c.name}</span></button>`).join('');
   $('#seedGrid').innerHTML = SEEDS.map(s => `<button class="seedCard" data-id="${s.id}" style="--c:${s.pack}"><span class="pk"><em>${s.emoji}</em></span><b>${plantShort(s)}</b><small>${stars(s.level)}</small><i class="badge">완성!</i></button>`).join('');
   $$('.charCard').forEach(b => b.onclick = () => { G.charId = b.dataset.id; SFX.play('click'); renderSetup(); });
   $$('.seedCard').forEach(b => b.onclick = () => { G.seedId = b.dataset.id; SFX.play('click'); renderSetup(); });
@@ -1303,6 +1425,13 @@ function buildUI() {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     if (GB.isOpen() || MP.menuOpen()) return;
     G.keys[e.code] = true;
+    // 숫자키 1~6: 가방 칸 고르기 (같은 키를 다시 누르면 내려놓기)
+    const dm = /^(Digit|Numpad)([1-6])$/.exec(e.code);
+    if (dm && !e.repeat) { if (selectSlot(+dm[2] - 1)) { e.preventDefault(); return; } }
+    // 게임 중 스페이스는 점프 (대화 중이면 대화 넘기기). 행동은 E · Enter · Z
+    if (e.code === 'Space' && G.mode === 'play' && !$('#help').classList.contains('show')) {
+      e.preventDefault(); if (!e.repeat && !advanceDialog()) jump(); return;
+    }
     if (['Space', 'KeyE', 'Enter', 'KeyZ'].includes(e.code)) {
       if ($('#help').classList.contains('show')) { $('#help').classList.remove('show'); e.preventDefault(); return; }
       if (G.mode === 'story') { e.preventDefault(); storyNext(); return; }
@@ -1328,6 +1457,53 @@ function buildUI() {
     knob.style.transform = `translate(${dx}px, ${dy}px)`;
     G.joy.x = dx / R; G.joy.y = dy / R;
   }
+  // 가방 칸을 누르거나 탭해도 골라져요. 칸마다 숫자키 표시
+  document.querySelectorAll('#inventory .slot').forEach((q, i) => {
+    const n = document.createElement('i'); n.className = 'num'; n.textContent = String(i + 1); q.appendChild(n);
+    q.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); SFX.init(); selectSlot(i); });
+  });
+  // 점프 버튼 (터치 화면)
+  $('#jumpBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); SFX.init(); if (!advanceDialog()) jump(); });
+
+  // 시점 돌리기: 컴퓨터는 마우스로 화면을 끌고, 터치 화면은 손가락으로 끌어요.
+  // 조이스틱을 잡은 손가락과 따로 움직여서 이동하면서 동시에 돌릴 수 있어요. 두 번 탭/더블클릭하면 처음 시점으로
+  const gl = $('#gl');
+  const pts = new Map();   // 화면(#gl)에 닿아 있는 손가락/마우스. 조이스틱 손가락은 여기 안 들어와요
+  let rotId = null, pinch = null, lastTap = 0;
+  const canOrbit = () => G.cam.mode === 'follow' && (G.mode === 'play' || G.mode === 'complete') && G.player;
+  const setZoom = (z) => { G.cam.zoom = Math.min(CAM_ZOOM_MAX, Math.max(CAM_ZOOM_MIN, z)); };
+  const pinchDist = () => { const [a, b] = [...pts.values()]; return Math.hypot(a.x - b.x, a.y - b.y) || 1; };
+  gl.addEventListener('pointerdown', (e) => {
+    if (!canOrbit() || (e.pointerType === 'mouse' && e.button !== 0 && e.button !== 2)) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    try { gl.setPointerCapture(e.pointerId); } catch (err) { }
+    if (pts.size === 1) {
+      rotId = e.pointerId; G.cam.drag = true;
+      if (e.pointerType !== 'mouse') { const n = performance.now(); if (n - lastTap < 300) camReset(); lastTap = n; }
+    } else if (pts.size === 2) { rotId = null; pinch = { d: pinchDist(), z: G.cam.zoom }; }   // 두 손가락: 확대·축소
+  });
+  gl.addEventListener('pointermove', (e) => {
+    const p = pts.get(e.pointerId); if (!p) return;
+    const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
+    if (pinch && pts.size >= 2) { setZoom(pinch.z * pinch.d / pinchDist()); return; }
+    if (e.pointerId !== rotId) return;
+    const sp = e.pointerType === 'mouse' ? 0.005 : 0.008;
+    G.cam.yaw = wrapAngle(G.cam.yaw - dx * sp);
+    G.cam.elev = Math.min(CAM_ELEV_MAX, Math.max(CAM_ELEV_MIN, G.cam.elev + dy * sp * 0.7));
+  });
+  const endC = (e) => {
+    if (!pts.delete(e.pointerId)) return;
+    if (pts.size < 2) pinch = null;
+    if (pts.size === 1) rotId = [...pts.keys()][0];   // 한 손가락 남으면 다시 돌리기
+    if (pts.size === 0) { rotId = null; G.cam.drag = false; }
+  };
+  // 손가락을 다른 곳에서 떼거나 캡처가 풀려도 '끄는 중'이 남지 않게 창 전체에서 받아요
+  window.addEventListener('pointerup', endC); window.addEventListener('pointercancel', endC); gl.addEventListener('lostpointercapture', endC);
+  gl.addEventListener('dblclick', () => { if (canOrbit()) camReset(); });
+  // 마우스 휠: 확대·축소
+  gl.addEventListener('wheel', (e) => { if (!canOrbit()) return; e.preventDefault(); setZoom(G.cam.zoom * Math.exp(e.deltaY * (e.deltaMode === 1 ? 0.04 : 0.0012))); }, { passive: false });
+  gl.addEventListener('contextmenu', (e) => e.preventDefault());   // 오른쪽 버튼으로 끌어도 돌아가게
+
   // 버튼 호버 효과음
   document.addEventListener('pointerover', (e) => { if (e.target.closest && e.target.closest('.btn, .charCard, .seedCard, .choice') && e.pointerType === 'mouse') SFX.play('hover'); });
 }

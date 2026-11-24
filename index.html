@@ -2,12 +2,15 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<!-- 보안: 이 사이트 파일과 아래 주소 말고는 불러오거나 연결하지 못하게 막아요. Firebase 주소를 바꾸면 connect-src도 확인하세요 -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.firebasedatabase.app https://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; frame-src https://www.figma.com https://*.figma.site; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>물줄때 마을 · 땀땀이와 씨앗 이야기</title>
-<link rel="stylesheet" href="css/fonts.css">
-<link rel="stylesheet" href="css/style.css">
-<link rel="stylesheet" href="css/guestbook.css">
-<link rel="stylesheet" href="css/multiplayer.css">
+<link rel="stylesheet" href="css/fonts.css?v=20261124a">
+<link rel="stylesheet" href="css/style.css?v=20261124a">
+<link rel="stylesheet" href="css/guestbook.css?v=20261124a">
+<link rel="stylesheet" href="css/multiplayer.css?v=20261124a">
 </head>
 <body>
 <canvas id="gl"></canvas>
@@ -86,7 +89,8 @@
     <span class="slot" data-k="nutrient" title="햇빛 담은 반짝이 (양분)">☀️<b>0</b></span>
   </div>
   <div id="joy"><span class="hint">끌어서 이동</span><div id="joyKnob"></div></div>
-  <div id="keysHint"><kbd>W A S D</kbd> 또는 <kbd>방향키</kbd> 이동<br><kbd>E</kbd> <kbd>스페이스</kbd> 행동 · <kbd>Shift</kbd> 달리기</div>
+  <div id="keysHint"><kbd>W A S D</kbd> 또는 <kbd>방향키</kbd> 이동 · <kbd>Shift</kbd> 달리기<br><kbd>E</kbd> 행동 · <kbd>스페이스</kbd> 점프 · 마우스로 끌면 시점 돌리기, 휠로 확대·축소</div>
+  <button id="jumpBtn" aria-label="점프"><span class="k">⤴</span><span>점프</span></button>
   <button id="actBtn" aria-label="행동하기"><span class="k">✋</span><span id="actLabel">살펴보기</span></button>
 </section>
 <div id="topBtns">
@@ -111,8 +115,10 @@
     <h3>이렇게 놀아요</h3>
     <div class="helpGrid">
       <kbd>WASD · 방향키</kbd><span>마을을 걸어 다녀요 (Shift는 달리기)</span>
-      <kbd>E · 스페이스</kbd><span>말 걸기, 흔들기, 물 뜨기, 돌멩이 던지기, 사다리 오르기</span>
-      <kbd>🕹️ · ✋</kbd><span>터치 화면에서는 왼쪽 조이스틱과 오른쪽 버튼</span>
+      <kbd>E · Enter</kbd><span>말 걸기, 흔들기, 물 뜨기, 돌멩이 던지기, 사다리 오르기</span>
+      <kbd>스페이스</kbd><span>점프</span>
+      <kbd>🖱️ 끌기</kbd><span>화면을 끌면 시점이 돌아가요. 마우스 휠로 확대·축소, 더블클릭하면 처음 시점으로</span>
+      <kbd>🕹️ · ✋ · ⤴</kbd><span>터치 화면에서는 왼쪽 조이스틱으로 이동, 오른쪽 버튼으로 행동·점프. 빈 화면을 다른 손가락으로 끌면 이동하면서 시점을 돌릴 수 있어요. 두 손가락으로 벌리고 오므리면 확대·축소 (두 번 탭하면 처음 시점)</span>
       <kbd>! 표시</kbd><span>다음에 가 볼 곳이에요</span>
       <kbd>⛲ 광장</kbd><span>식물을 다 키우면 열려요. 친구들과 만나고 방명록을 남기는 곳이에요</span>
     </div>
@@ -291,9 +297,7 @@
       <h2>GAIA상 (대학 총장상)을 받았어요</h2>
       <p class="lede">2026 경기도 지산학 미래성장페어의 인재양성 분과 전문대 공동 PBL 경진대회에서, ‘물리적 인터랙션 기반 토양 수분 알림 화분 개발’로 GAIA상을 수상했어요.</p>
       <div class="awardRow">
-        <figure class="big"><img src="assets/img/award_team.webp" data-zoom alt="GAIA상 상패를 들고 있는 4CUS 팀"><figcaption>4CUS 팀 · 최혜지 김채현 유재인 마상서</figcaption></figure>
-        <figure><img src="assets/img/award_stage.webp" data-zoom alt="무대에서 GAIA상을 받는 모습"><figcaption>시상식</figcaption></figure>
-        <figure><img src="assets/img/award_plaque.webp" data-zoom alt="무대에서 들고 있는 GAIA상 상패"><figcaption>무대 위 GAIA상 상패</figcaption></figure>
+        <figure><img data-a="assets/img/award_plaque.webp" data-zoom alt="무대에서 들고 있는 GAIA상 상패"><figcaption>무대 위 GAIA상 상패</figcaption></figure>
       </div>
       <ul class="awardFacts">
         <li><b>행사</b><span>2026 경기도 지산학 미래성장페어 (10월 27~28일, 경기도경제과학진흥원)</span></li>
@@ -346,19 +350,20 @@
 </section>
 <div id="lightbox"><img id="lbImg" alt=""></div>
 
-<script src="lib/three/three.min.js"></script>
-<script src="lib/three/GLTFLoader.js"></script>
-<script src="lib/three/OrbitControls.js"></script>
-<script src="lib/three/BufferGeometryUtils.js"></script>
-<script src="js/audio.js"></script>
-<script src="js/data.js"></script>
-<script src="js/models.js"></script>
-<script src="js/world.js"></script>
-<script src="js/game.js"></script>
-<script src="js/plaza.js"></script>
-<script src="js/info.js"></script>
-<script src="js/net.js"></script>
-<script src="js/guestbook.js"></script>
-<script src="js/multiplayer.js"></script>
+<script src="lib/three/three.min.js?v=20261124a"></script>
+<script src="lib/three/GLTFLoader.js?v=20261124a"></script>
+<script src="lib/three/OrbitControls.js?v=20261124a"></script>
+<script src="lib/three/BufferGeometryUtils.js?v=20261124a"></script>
+<script src="lib/meshopt/meshopt_decoder.js?v=20261124a"></script>
+<script src="js/audio.js?v=20261124a"></script>
+<script src="js/data.js?v=20261124a"></script>
+<script src="js/models.js?v=20261124a"></script>
+<script src="js/world.js?v=20261124a"></script>
+<script src="js/game.js?v=20261124a"></script>
+<script src="js/plaza.js?v=20261124a"></script>
+<script src="js/info.js?v=20261124a"></script>
+<script src="js/net.js?v=20261124a"></script>
+<script src="js/guestbook.js?v=20261124a"></script>
+<script src="js/multiplayer.js?v=20261124a"></script>
 </body>
 </html>

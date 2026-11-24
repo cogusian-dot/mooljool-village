@@ -3,7 +3,7 @@
 // 물줄때 마을 — 렌더러 & 마을 만들기
 const W = {
   renderer: null, scene: null, camera: null, sun: null,
-  colliders: [], refs: {}, clouds: [], ripples: [], time: 0,
+  colliders: [], boxes: [], zoneObjs: { village: [], plaza: [] }, refs: {}, clouds: [], ripples: [], time: 0,
   BOUND: 31,
 };
 
@@ -41,12 +41,36 @@ function initRenderer(canvas) {
   });
 }
 
+// 느린 기기 자동 조절: 3초 평균이 두 번 연달아 약 28fps보다 느리면 해상도를 한 단계(0.25)씩 낮추고,
+// 가장 낮은 단계에서도 느리면 그림자 해상도를 낮춰요. 다시 올리지는 않아요(화면이 깜빡이지 않게).
+// 30fps로 묶인 기기(절전 모드)는 건드리지 않게 기준을 28fps로 잡았어요. 주소 끝에 ?hq 를 붙이면 끔.
+const AQ = { acc: 0, n: 0, warm: 0, slow: 0, off: /hq/.test(location.search) };
+function adaptQuality(ms) {
+  if (AQ.off || document.hidden || !(ms > 0) || ms > 250) return;
+  if (AQ.warm < 5000) { AQ.warm += ms; return; }   // 처음 5초는 셰이더 준비 때문에 느릴 수 있어서 건너뛰어요
+  AQ.acc += ms; AQ.n++;
+  if (AQ.acc < 3000) return;
+  const avg = AQ.acc / AQ.n; AQ.acc = 0; AQ.n = 0;
+  if (avg < 36) { AQ.slow = 0; return; }
+  if (++AQ.slow < 2) return;   // 두 번(6초) 연달아 느릴 때만 낮춰요
+  AQ.slow = 0;
+  const r = W.renderer, pr = r.getPixelRatio(), sh = W.sun.shadow;
+  if (pr > 0.75) {
+    r.setPixelRatio(Math.max(0.75, Math.round((pr - 0.25) * 4) / 4)); r.setSize(window.innerWidth, window.innerHeight, false);
+    console.info('[화질] 느려서 해상도를 낮춰요 →', r.getPixelRatio());
+  } else if (sh.mapSize.x > 512) {
+    const s = sh.mapSize.x / 2; sh.mapSize.set(s, s); if (sh.map) { sh.map.dispose(); sh.map = null; }
+    console.info('[화질] 느려서 그림자 해상도를 낮춰요 →', s);
+  } else AQ.off = true;
+  AQ.warm = 2000;   // 바꾼 직후 1초 정도는 다시 재지 않아요
+}
+
 // 화면 좌표로 변환 (휘어진 지평선 반영)
 const _v = new THREE.Vector3();
 function worldToScreen(p, out) {
   const cam = W.camera;
-  _v.copy(p).applyMatrix4(cam.matrixWorldInverse);
-  const cf = Math.max(0, -_v.z - U_D0.value); _v.y -= U_CURVE.value * cf * cf;
+  const cf = Math.max(0, Math.hypot(p.x - U_CC.value.x, p.z - U_CC.value.y) - U_D0.value);   // 셰이더와 같은 휘기
+  _v.copy(p); _v.y -= U_CURVE.value * cf * cf; _v.applyMatrix4(cam.matrixWorldInverse);
   const behind = _v.z > 0;
   _v.applyMatrix4(cam.projectionMatrix);
   out.x = (_v.x * 0.5 + 0.5) * window.innerWidth;
@@ -56,6 +80,8 @@ function worldToScreen(p, out) {
 }
 
 function collider(x, z, r) { const c = { x, z, r }; W.colliders.push(c); return c; }
+// 네모난 건물용 충돌 상자(가운데 x·z, 반폭 hw, 반깊이 hd). 원 여러 개로는 벽 앞면을 정확히 못 막아서 써요
+function boxCollider(x, z, hw, hd) { const b = { x, z, hw, hd }; W.boxes.push(b); return b; }
 
 // ── 땅 텍스처 ──
 function groundTexture() {
@@ -312,16 +338,22 @@ function buildWorld() {
   // 햇살 언덕 (사다리로 올라가 반짝이에 햇빛을 담는 곳)
   {
     const HX = -19, HZ = -16;
-    const hill = new THREE.Group(); hill.position.set(HX, 0, HZ); s.add(hill);
+    const hill = new THREE.Group(); hill.position.set(HX, 0, HZ); s.add(hill); W.refs.hillRoot = hill;
     const lathe = (pts, seg) => new THREE.LatheGeometry(new THREE.SplineCurve(pts.map(q => new THREE.Vector2(q[0], q[1]))).getPoints(seg), 48);
     add(hill, lathe([[4.85, 0], [4.72, 0.25], [4.3, 1.2], [3.75, 2.5], [3.2, 3.8], [2.9, 4.35], [2.4, 4.75], [1.4, 4.95], [0.01, 5.0]], 40), M('#7CC25A', { rim: 0.12 }));
     const capM = M('#BCE67E', { rim: 0.14 });
     add(hill, lathe([[3.42, 3.55], [3.34, 3.8], [2.98, 4.4], [2.46, 4.81], [1.42, 5.01], [0.01, 5.06]], 24), capM);
-    for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2; const b = ell(hill, capM, 0.52, 0.42, 0.3, Math.cos(a) * 3.38, 3.5, Math.sin(a) * 3.38, 12); b.rotation.y = -a + Math.PI / 2; }
-    for (let i = 0; i < 5; i++) { const a = i * 1.3 + 0.5; flower5(hill, [Math.cos(a) * 1.3, 5.0, Math.sin(a) * 1.3 - 0.3], ['#FFFFFF', '#FFE36E', '#FFB3C7'][i % 3], '#FFC83A', 0.16); }
     const la = -0.35, out = new THREE.Vector3(Math.sin(la), 0, Math.cos(la));
-    const base = new THREE.Vector3(HX + out.x * 5.05, 0, HZ + out.z * 5.05);
-    const ladderTop = new THREE.Vector3(HX + out.x * 3.06, 4.6, HZ + out.z * 3.06);
+    const ladA = Math.atan2(out.z, out.x);   // 사다리가 걸치는 방향(언덕 둘레 각도)
+    for (let i = 0; i < 16; i++) {
+      const a = i / 16 * Math.PI * 2;
+      if (Math.abs(Math.atan2(Math.sin(a - ladA), Math.cos(a - ladA))) < 0.3) continue;   // 사다리 바로 뒤 둔덕은 빼요(사다리가 뚫고 지나가서)
+      const b = ell(hill, capM, 0.52, 0.42, 0.3, Math.cos(a) * 3.38, 3.5, Math.sin(a) * 3.38, 12); b.rotation.y = -a + Math.PI / 2;
+    }
+    for (let i = 0; i < 5; i++) { const a = i * 1.3 + 0.5; flower5(hill, [Math.cos(a) * 1.3, 5.0, Math.sin(a) * 1.3 - 0.3], ['#FFFFFF', '#FFE36E', '#FFB3C7'][i % 3], '#FFC83A', 0.16); }
+    // 사다리: 언덕 옆면보다 0.2 이상 바깥으로 지나가게(예전 5.05→3.06은 둔덕·옆면을 뚫었어요)
+    const base = new THREE.Vector3(HX + out.x * 5.25, 0, HZ + out.z * 5.25);
+    const ladderTop = new THREE.Vector3(HX + out.x * 3.2, 4.6, HZ + out.z * 3.2);
     const yAxis = ladderTop.clone().sub(base).normalize();
     const xAxis = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), out).normalize();
     const zAxis = new THREE.Vector3().crossVectors(xAxis, yAxis).normalize();
@@ -358,7 +390,10 @@ function buildWorld() {
     ell(decor, M('#FFF1B8', { em: '#FFD86B', ei: 0.6 }), 0.32, 0.36, 0.32, x, 3.0, z, 14);
     collider(x, z, 0.4);
   }
-  const merged = mergeByMaterial(decor); s.add(merged);
+  const merged = mergeByMaterial(decor, 'village'); s.add(merged);
+  addOccluders('village', at); addOccluders('village', W.refs.hillRoot || new THREE.Group());
+  // 마을에 속한 것들(광장에 있을 때 숨겨요). 조명·구름은 빼요
+  W.zoneObjs = { village: s.children.filter(o => !o.isLight && o !== W.sun.target && !W.clouds.includes(o)), plaza: [] };
 
   // 구름
   for (let i = 0; i < 9; i++) {

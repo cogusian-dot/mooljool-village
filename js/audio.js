@@ -82,6 +82,8 @@ const SFX = (() => {
       noise(0.55, { freq: 2600, q: 0.8, vol: 0.16, sweep: 1400 });
       tone(180, 0.45, { type: 'sine', vol: 0.12, vib: 14 });
     },
+    jump() { tone(380, 0.16, { slide: 820, vol: 0.12, type: 'sine' }); },
+    land() { noise(0.08, { freq: 300, filter: 'lowpass', vol: 0.09 }); tone(180, 0.08, { slide: 120, vol: 0.06, type: 'sine' }); },
     boing() { tone(700, 0.22, { slide: 180, vol: 0.16, type: 'sine' }); },
     plop() { tone(380, 0.12, { slide: 140, vol: 0.18, type: 'sine' }); },
     splash() {

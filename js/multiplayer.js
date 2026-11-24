@@ -16,7 +16,7 @@ const MP = (() => {
     return {
       n: Array.from(G.name || '').slice(0, 8).join(''), c: G.charId || '', m: vis ? 1 : 0,
       // 좌표는 광장 한가운데를 기준으로 보내요 (데이터베이스 규칙: -60~60)
-      x: vis ? r1(G.pos.x - PLAZA.x) : 0, y: vis ? r1(G.posY || 0) : 0, z: vis ? r1(G.pos.z - PLAZA.z) : 0, r: r2(wrapA(G.yaw || 0)),
+      x: vis ? r1(G.pos.x - PLAZA.x) : 0, y: vis ? r1((G.posY || 0) + (G.jumpY || 0)) : 0, z: vis ? r1(G.pos.z - PLAZA.z) : 0, r: r2(wrapA(G.yaw || 0)),
       a: me.a, an: me.an, tg: me.tg,
     };
   }

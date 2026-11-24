@@ -1,20 +1,8 @@
 // 물줄때 마을 · 에셋 주소 + 캐릭터·씨앗 데이터 — 이름·대사·씨앗 정보는 여기서 고쳐요
 // 원본 단일 파일 index.html 882–1070행에서 옮김
-// 파일 경로 → 실제 주소. (웹에 올리는 '한 파일' 버전에서는 파일 안에 담아 둔 데이터를 꺼내 써요)
-const _assetCache = {};
-function assetURL(path, forceData) {
-  const B = window.ASSET_B64;
-  if (!B || !B[path]) return path;
-  const ext = path.split('.').pop();
-  const mime = { webp: 'image/webp', jpg: 'image/jpeg', png: 'image/png', mp4: 'video/mp4' }[ext] || 'application/octet-stream';
-  if (ext !== 'mp4' || forceData) return 'data:' + mime + ';base64,' + B[path];
-  if (_assetCache[path]) return _assetCache[path];
-  try {
-    const bin = atob(B[path]); const u8 = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
-    return _assetCache[path] = URL.createObjectURL(new Blob([u8], { type: mime }));
-  } catch (e) { return 'data:' + mime + ';base64,' + B[path]; }
-}
+// 파일 경로 → 실제 주소 (지금은 경로 그대로. 나중에 CDN 등으로 옮기면 여기만 고치면 돼요)
+function assetURL(path) { return path; }
+// data-a="경로" 로 적어 둔 이미지·영상은 그 화면을 열 때 불러와요(첫 로딩을 가볍게)
 function hydrateAssets(root) {
   (root || document).querySelectorAll('[data-a]').forEach(el => { if (!el.dataset.done) { el.dataset.done = '1'; el.src = assetURL(el.dataset.a); } });
 }
@@ -196,8 +184,11 @@ function plantShort(seed) { return seed.short || seed.name; }
 //   비워 두면 '체험 모드'로 동작해요. 체험 모드에서는 같은 기기·같은 브라우저 안에서만 글이 보여요.
 const GUESTBOOK = {
   dbUrl: 'https://mooljool-village-default-rtdb.asia-southeast1.firebasedatabase.app',
-  room: 'guestbook',   // 전시회마다 새 게시판을 쓰고 싶으면 이름만 바꾸세요 (예: 'gtec2026')
-  maxNotes: 5000,      // 모아 둘 최근 글 수 ('방명록 모아보기' 표와 '몇 명 왔다감' 숫자에 쓰여요)
+  // apiKey: Firebase 프로젝트 설정 > 일반 > '웹 API 키'. 익명 로그인에 써요. 비어 있으면 방명록은 읽기만 돼요.
+  //   (이 키는 공개돼도 괜찮은 값이에요. 대신 README '방명록 켜기 ④'대로 키 사용처를 우리 사이트로 묶어 두세요)
+  apiKey: 'AIzaSyCb3T_UZdXZOVP5qW6v6rz4LExuizsXzJM',
+  room: 'guestbook',   // 게시판 이름. 바꾸면 firebase/database.rules.json 안의 'guestbook'도 똑같이 바꿔서 다시 붙여 넣어야 해요
+  maxNotes: 500,       // 들어올 때 받아 오는 최근 글 수 (게시판·'방명록 모아보기' 표). '몇 명 왔다감' 숫자는 전체 글 수예요
   maxLength: 40,       // 한 글의 최대 글자 수
   cooldownSec: 30,     // 같은 기기에서 다시 쓰기까지 기다리는 시간(초)
 };
