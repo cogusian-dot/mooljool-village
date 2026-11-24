@@ -668,7 +668,7 @@ async function completeStage() {
   if (G.stage >= 3) { await finishPlant(); return; }
   const msg = G.stage === 1 ? '싹이 텄어요! 🌱' : '쑥쑥 자랐어요! 🌿';
   toast(msg, 'grow');
-  await say('ttami', G.stage === 1 ? `우와;; 싹이 났어;;! 고마워 ${callName(G.name)};; 한 번만 더 도와주면 다 자랄 것 같아;;` : `잎이 많아졌지;;? 조금만 더 도와줘;;`);
+  await say('ttami', G.stage === 1 ? `우와;; 싹이 났어;;! 고마워 ${callName(G.name)}!;; 한 번만 더 도와주면 다 자랄 것 같아;;` : `잎이 많아졌지;;? 조금만 더 도와줘;;`);
   camFollow();
   await wait(900);
   toast('땀땀이가 또 물방울을 올려 보냈어요!');
@@ -686,7 +686,7 @@ async function finishPlant() {
   G.completed.add(G.seedId);
   camTo(V3(3.5, 8.5, 17), V3(2.8, 2.6, 0), 1.6);
   await wait(2600);
-  await say('ttami', `해냈다;;! ${plantShort(seed)} 완성이야;;! ${callName(G.name)}, 정말 고마워;;;`);
+  await say('ttami', `해냈다;;! ${plantShort(seed)} 완성이야;;! ${callName(G.name)}!;; 정말 고마워;;`);
   showComplete();
 }
 
@@ -1373,7 +1373,7 @@ async function startGame() {
   await wait(900);
   // 씨앗 심기
   const seed = SEED_BY_ID[G.seedId];
-  await say('ttami', `안녕;; 난 땀땀이야;; 네가 ${callName(G.name)}?;; ${J(plantShort(seed), '을', '를')} 심어 줄 거야;;?`);
+  await say('ttami', `안녕;; 난 땀땀이야;; 네가 ${J(nickName(G.name), '이야', '야')}?;; ${J(plantShort(seed), '을', '를')} 심어 줄 거야;;?`);
   facePoint(V3(0, 0, 0));
   G.playerHop = 0; await tween(0.4, k => { G.playerHop = Math.sin(k * Math.PI) * 0.5; });
   const seedM = ell(null, PM.seed, 0.12, 0.07, 0.18, 0, 0, 0, 12); W.scene.add(seedM);
