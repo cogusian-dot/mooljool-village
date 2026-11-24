@@ -523,9 +523,6 @@ button:focus-visible, input:focus-visible { outline: 4px solid rgba(59,168,240,.
   #toast { top: calc(58px + env(safe-area-inset-top)); }
 }
 
-/* 요정이 기물에 부딪힐 때 '꽁!' */
-.bonkPop { font-family: var(--jua); font-size: 20px; color: #fff; -webkit-text-stroke: 1px #C2552E; text-shadow: 0 2px 0 #C2552E; transform: translate(-50%, -100%); animation: bonkPop .9s ease-out forwards; white-space: nowrap; }
-@keyframes bonkPop { 0% { transform: translate(-50%, -60%) scale(.4); opacity: 0; } 25% { transform: translate(-50%, -110%) scale(1.25); opacity: 1; } 60% { transform: translate(-50%, -130%) scale(1); opacity: 1; } 100% { transform: translate(-50%, -170%) scale(.9); opacity: 0; } }
 
 /* 조작 버튼: 물젤리처럼 반투명 */
 #joy { background: radial-gradient(circle at 35% 28%, rgba(255,255,255,.55), rgba(190,230,255,.18) 55%, rgba(120,190,240,.14));
