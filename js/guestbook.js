@@ -109,7 +109,7 @@ const GB = (() => {
     <div class="gbcPreview" id="gbcPreview"></div>
     <div class="gbcSeeds" id="gbcSeeds"></div>
     <label class="gbcLabel"><span>이름</span><input id="gbcName" maxlength="8" autocomplete="off" placeholder="이름"></label>
-    <label class="gbcLabel"><span>한마디</span><textarea id="gbcMsg" rows="2" placeholder="땀땀이와 키운 소감을 남겨 주세요"></textarea></label>
+    <label class="gbcLabel"><span>한마디</span><textarea id="gbcMsg" rows="2" placeholder="내가 키운 식물을 자랑하고 의견을 남겨주세요!"></textarea></label>
     <div class="gbcRow"><div class="gbcColors" id="gbcColors"></div><small class="gbcCount" id="gbcCount"></small></div>
     <p class="gbcErr" id="gbcErr" role="alert"></p>
     <div class="gbcBtns"><button class="btn ghost" id="gbcCancel">취소</button><button class="btn" id="gbcSend">📌 게시판에 붙이기</button></div>
