@@ -271,7 +271,7 @@ function movePlayer(dt) {
   for (let it = 0; it < 2; it++) {
     for (const c of W.colliders) pushOut(c.x, c.z, c.r + 0.45);
     for (const b of W.boxes) pushOutBox(b, 0.45);
-    for (const n of G.npcs) { pushOut(n.root.position.x, n.root.position.z, 0.95); pushOut(n.pot.position.x, n.pot.position.z, 0.85); }
+    for (const n of G.npcs) { pushOut(n.root.position.x, n.root.position.z, 0.95); pushOut(n.pot.position.x, n.pot.position.z, POT_R + 0.45); }
   }
   if (G.inPlaza) { PZ.clampWalk(); return; }
   const d = Math.hypot(G.pos.x, G.pos.z);
@@ -300,6 +300,50 @@ function pushOutBox(b, pr) {
 function pushOut(cx, cz, r) {
   const dx = G.pos.x - cx, dz = G.pos.z - cz, d = Math.hypot(dx, dz);
   if (d < r && d > 0.0001) { G.pos.x = cx + dx / d * r; G.pos.z = cz + dz / d * r; }
+}
+// 요정도 기물(나무·바위·집·화분 등)과 다른 요정·플레이어에 부딪혀요
+const NPC_R = 0.45;
+const POT_R = MINI_SCALE * 0.125;   // 요정 화분 반지름 (큰 땀땀이 18배 → 2.25와 같은 비율)
+function npcPush(p, cx, cz, r) {
+  const dx = p.x - cx, dz = p.z - cz, d = Math.hypot(dx, dz);
+  if (d < r && d > 0.0001) { p.x = cx + dx / d * r; p.z = cz + dz / d * r; return true; }
+  return false;
+}
+function npcCollide(n) {
+  const p = n.root.position; let hit = false;
+  for (const c of W.colliders) if (Math.abs(p.x - c.x) < c.r + 1 && Math.abs(p.z - c.z) < c.r + 1) hit = npcPush(p, c.x, c.z, c.r + NPC_R) || hit;
+  for (const b of W.boxes) {
+    const dx = p.x - b.x, dz = p.z - b.z, ox = b.hw + NPC_R - Math.abs(dx), oz = b.hd + NPC_R - Math.abs(dz);
+    if (ox > 0 && oz > 0) { if (ox < oz) p.x += dx < 0 ? -ox : ox; else p.z += dz < 0 ? -oz : oz; hit = true; }
+  }
+  for (const m of G.npcs) {
+    hit = npcPush(p, m.pot.position.x, m.pot.position.z, POT_R + NPC_R) || hit;   // 자기 화분 포함
+    if (m !== n) hit = npcPush(p, m.root.position.x, m.root.position.z, 0.9) || hit;
+  }
+  if (G.player && !G.inPlaza) hit = npcPush(p, G.pos.x, G.pos.z, 0.95) || hit;
+  return hit;
+}
+function npcBlocked(n, q) {
+  const r = NPC_R + 0.1;
+  for (const c of W.colliders) if (Math.hypot(q.x - c.x, q.z - c.z) < c.r + r) return true;
+  for (const b of W.boxes) if (Math.abs(q.x - b.x) < b.hw + r && Math.abs(q.z - b.z) < b.hd + r) return true;
+  for (const m of G.npcs) { if (Math.hypot(q.x - m.pot.position.x, q.z - m.pot.position.z) < POT_R + r) return true; if (m !== n && Math.hypot(q.x - m.root.position.x, q.z - m.root.position.z) < 1) return true; }
+  return false;
+}
+function npcBonk(n) {
+  n.timer = 0.6 + Math.random() * 0.6;   // 부딪히면 곧 다른 곳으로 가요
+  if (n.bonkCd > 0) return;
+  n.bonkCd = 1.8; n.hop = 0.22;
+  const p = n.root.position;
+  if (G.player && Math.hypot(G.pos.x - p.x, G.pos.z - p.z) < 14) {
+    SFX.play('bonk'); burst('puff', V3(p.x, 0.9, p.z), 3);
+    worldToScreen(p.clone().add(V3(0, 1.9, 0)), _s);
+    if (_s.visible) {
+      const e = document.createElement('div'); e.className = 'bonkPop'; e.textContent = '꽁!';
+      e.style.left = _s.x + 'px'; e.style.top = _s.y + 'px'; $('#labels').appendChild(e);
+      setTimeout(() => e.remove(), 900);
+    }
+  }
 }
 function facePoint(p) { G.yaw = Math.atan2(p.x - G.pos.x, p.z - G.pos.z); }
 
@@ -391,12 +435,18 @@ function updateNPCs(dt, t) {
       n.timer -= dt;
       if (n.timer <= 0) {
         n.timer = 2.5 + Math.random() * 3.5;
-        const a = Math.random() * Math.PI * 2;
-        n.target.set(n.home.x + Math.cos(a) * 1.3, 0, n.home.z + Math.sin(a) * 1.3);
+        // 기물 안쪽은 목적지로 고르지 않아요 (가는 길에 부딪히면 '꽁!')
+        for (let k = 0; k < 8; k++) {
+          const a = Math.random() * Math.PI * 2;
+          n.target.set(n.home.x + Math.cos(a) * 1.3, 0, n.home.z + Math.sin(a) * 1.3);
+          if (!npcBlocked(n, n.target)) break;
+        }
       }
       const dx = n.target.x - p.x, dz = n.target.z - p.z, d = Math.hypot(dx, dz);
       if (d > 0.15) { speed = 1.6; p.x += dx / d * speed * dt; p.z += dz / d * speed * dt; n.facing = Math.atan2(dx, dz); }
+      if (npcCollide(n) && speed > 0) npcBonk(n);
     }
+    n.bonkCd = Math.max(0, (n.bonkCd || 0) - dt);
     const dy = wrapAngle(n.facing - n.root.rotation.y);
     n.root.rotation.y = wrapAngle(n.root.rotation.y + dy * Math.min(1, dt * 6));
     n.hop = Math.max(0, n.hop - dt);
@@ -618,7 +668,7 @@ async function completeStage() {
   if (G.stage >= 3) { await finishPlant(); return; }
   const msg = G.stage === 1 ? '싹이 텄어요! 🌱' : '쑥쑥 자랐어요! 🌿';
   toast(msg, 'grow');
-  await say('ttami', G.stage === 1 ? `우와;; 싹이 났어;;! 고마워 ${callName(G.name)};; 한 번만 더 도와주면 다 자랄 것 같아;;` : `잎이 많아졌지;;? 조금만 더 도와줘;;`);
+  await say('ttami', G.stage === 1 ? `우와;; 싹이 났어;;! 고마워 ${callName(G.name)}!;; 한 번만 더 도와주면 다 자랄 것 같아;;` : `잎이 많아졌지;;? 조금만 더 도와줘;;`);
   camFollow();
   await wait(900);
   toast('땀땀이가 또 물방울을 올려 보냈어요!');
@@ -636,7 +686,7 @@ async function finishPlant() {
   G.completed.add(G.seedId);
   camTo(V3(3.5, 8.5, 17), V3(2.8, 2.6, 0), 1.6);
   await wait(2600);
-  await say('ttami', `해냈다;;! ${plantShort(seed)} 완성이야;;! ${callName(G.name)}, 정말 고마워;;;`);
+  await say('ttami', `해냈다;;! ${plantShort(seed)} 완성이야;;! ${callName(G.name)}!;; 정말 고마워;;`);
   showComplete();
 }
 
@@ -1077,7 +1127,7 @@ function hearts(pos) {
 
 // ═════════ 인벤토리 ═════════
 function showInventory() { $('#inventory').classList.add('show'); }
-// ─── 가방 칸 고르기 (숫자키 1~6 / 칸 누르기) → 고른 물건을 손에 들어요. 쓰는 건 지금처럼 E로 자동 ───
+// ─── 가방 칸 고르기 (칸 누르기) → 고른 물건을 손에 들어요. 쓰는 건 지금처럼 E로 자동 ───
 const SLOT_KEYS = ['apple', 'bucket', 'water', 'ladder', 'crystal', 'nutrient'];
 const SLOT_NAMES = { apple: '사과', bucket: '양동이', water: '물', ladder: '사다리', crystal: '반짝이', nutrient: '햇빛 담은 반짝이' };
 function slotHas(k) {
@@ -1323,7 +1373,7 @@ async function startGame() {
   await wait(900);
   // 씨앗 심기
   const seed = SEED_BY_ID[G.seedId];
-  await say('ttami', `안녕;; 난 땀땀이야;; 네가 ${callName(G.name)}?;; ${J(plantShort(seed), '을', '를')} 심어 줄 거야;;?`);
+  await say('ttami', `안녕;; 난 땀땀이야;; 네가 ${J(nickName(G.name), '이야', '야')}?;; ${J(plantShort(seed), '을', '를')} 심어 줄 거야;;?`);
   facePoint(V3(0, 0, 0));
   G.playerHop = 0; await tween(0.4, k => { G.playerHop = Math.sin(k * Math.PI) * 0.5; });
   const seedM = ell(null, PM.seed, 0.12, 0.07, 0.18, 0, 0, 0, 12); W.scene.add(seedM);

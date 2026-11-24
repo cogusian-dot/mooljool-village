@@ -112,5 +112,7 @@
 
 ## 모바일 화면 (2026-11-24)
 - 도움말 `#help`: 맨 위 `#helpClose`(처음엔 '게임 시작!', ❔로 열면 '게임으로 돌아가기'), 내용은 `.helpPc`/`.helpTouch`로 나눠 `(pointer: coarse)`에 따라 하나만 보임, 카드는 스크롤됨
-- 터치 화면(`pointer: coarse`): 가방 `#inventory`는 왼쪽 위에 작게, 가진 물건(`.slot.on`)만 보이고 가방 아이콘 숨김. 위쪽 `.round` 버튼 38px. 목표 안내는 그 아래(54px). 가로 화면에선 목표 안내가 맨 위, 가방은 그 아래
+- 터치 화면(`pointer: coarse`): `#hudTL`(목표 안내 `#objective` + 가방 `#inventory`를 감싼 div, 컴퓨터에선 display:contents)이 왼쪽 위 세로 묶음. 목표 안내 13px, 그 아래 가방은 가진 물건(`.slot.on`)만, 가방 아이콘 숨김. 위쪽 `.round` 버튼 38px. 묶음 폭은 버튼 줄 왼쪽까지(⛲ 버튼이 보이면 더 좁게)
 - 조이스틱·✋·점프 버튼은 반투명 '물젤리' 스타일(style.css 맨 끝)
+- 요정 충돌: `npcCollide`/`npcBlocked`가 기물(W.colliders·boxes)·화분(`POT_R` = MINI_SCALE×0.125 ≈ 0.81 + NPC_R)·다른 요정·플레이어와 부딪힘. 걷다가 부딪히면 `npcBonk` → '꽁!' 글자(`.bonkPop`)·`SFX.bonk`·폴짝, 곧 다른 곳으로 감
+- 부르는 이름: `nickName()`(data.js) 한글 3~4글자면 뒤 두 글자. 부를 때 `callName`(채현아/민지야), '~이야?' 물을 때 `J(nickName, '이야', '야')`(채현이야?/민지야?)

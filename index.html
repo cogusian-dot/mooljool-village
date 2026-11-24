@@ -7,10 +7,10 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>물줄때 마을 · 땀땀이와 씨앗 이야기</title>
-<link rel="stylesheet" href="css/fonts.css?v=20261124c">
-<link rel="stylesheet" href="css/style.css?v=20261124c">
-<link rel="stylesheet" href="css/guestbook.css?v=20261124c">
-<link rel="stylesheet" href="css/multiplayer.css?v=20261124c">
+<link rel="stylesheet" href="css/fonts.css?v=20261124f">
+<link rel="stylesheet" href="css/style.css?v=20261124f">
+<link rel="stylesheet" href="css/guestbook.css?v=20261124f">
+<link rel="stylesheet" href="css/multiplayer.css?v=20261124f">
 </head>
 <body>
 <canvas id="gl"></canvas>
@@ -78,6 +78,7 @@
 
 <!-- HUD -->
 <section id="hud">
+  <div id="hudTL">
   <div id="objective" class="clay"><span class="objIcon">🌱</span><span id="objText"></span></div>
   <div id="inventory" class="clay">
     <span class="bagIcon">👜</span>
@@ -87,6 +88,7 @@
     <span class="slot" data-k="ladder" title="사다리"><svg viewBox="0 0 32 32" width="32" height="32"><g fill="none" stroke-linecap="round"><path d="M10 3v26M22 3v26" stroke="#B5763A" stroke-width="3.4"/><path d="M10 8h12M10 14h12M10 20h12M10 26h12" stroke="#DDA661" stroke-width="3"/></g></svg></span>
     <span class="slot" data-k="crystal" title="반짝이">💎<b>0</b></span>
     <span class="slot" data-k="nutrient" title="햇빛 담은 반짝이 (양분)">☀️<b>0</b></span>
+  </div>
   </div>
   <div id="joy"><span class="hint">끌어서 이동</span><div id="joyKnob"></div></div>
   <div id="keysHint"><kbd>W A S D</kbd> 또는 <kbd>방향키</kbd> 이동 · <kbd>Shift</kbd> 달리기<br><kbd>E</kbd> 행동 · <kbd>스페이스</kbd> 점프 · 마우스로 끌면 시점 돌리기, 휠로 확대·축소</div>
@@ -359,20 +361,20 @@
 </section>
 <div id="lightbox"><img id="lbImg" alt=""></div>
 
-<script src="lib/three/three.min.js?v=20261124c"></script>
-<script src="lib/three/GLTFLoader.js?v=20261124c"></script>
-<script src="lib/three/OrbitControls.js?v=20261124c"></script>
-<script src="lib/three/BufferGeometryUtils.js?v=20261124c"></script>
-<script src="lib/meshopt/meshopt_decoder.js?v=20261124c"></script>
-<script src="js/audio.js?v=20261124c"></script>
-<script src="js/data.js?v=20261124c"></script>
-<script src="js/models.js?v=20261124c"></script>
-<script src="js/world.js?v=20261124c"></script>
-<script src="js/game.js?v=20261124c"></script>
-<script src="js/plaza.js?v=20261124c"></script>
-<script src="js/info.js?v=20261124c"></script>
-<script src="js/net.js?v=20261124c"></script>
-<script src="js/guestbook.js?v=20261124c"></script>
-<script src="js/multiplayer.js?v=20261124c"></script>
+<script src="lib/three/three.min.js?v=20261124f"></script>
+<script src="lib/three/GLTFLoader.js?v=20261124f"></script>
+<script src="lib/three/OrbitControls.js?v=20261124f"></script>
+<script src="lib/three/BufferGeometryUtils.js?v=20261124f"></script>
+<script src="lib/meshopt/meshopt_decoder.js?v=20261124f"></script>
+<script src="js/audio.js?v=20261124f"></script>
+<script src="js/data.js?v=20261124f"></script>
+<script src="js/models.js?v=20261124f"></script>
+<script src="js/world.js?v=20261124f"></script>
+<script src="js/game.js?v=20261124f"></script>
+<script src="js/plaza.js?v=20261124f"></script>
+<script src="js/info.js?v=20261124f"></script>
+<script src="js/net.js?v=20261124f"></script>
+<script src="js/guestbook.js?v=20261124f"></script>
+<script src="js/multiplayer.js?v=20261124f"></script>
 </body>
 </html>
