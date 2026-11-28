@@ -165,8 +165,8 @@ const SEEDS = [
 // · 지금 주소(figma.com/make/…)는 피그마가 다른 화면 안에 넣는 것을 막아서 새 창으로 열려요.
 // · 피그마 메이크에서 Publish(게시)해서 받은 ○○○.figma.site 주소로 url을 바꾸고 embed를 true로 하면 게임 화면 안에서 바로 열려요.
 const APP_LINK = {
-  url: 'https://www.figma.com/make/O1sYYVxtC07WmV8g9hACJD/Smart-Plant-Care-App?t=FSrivObawgwIRRfN-6',
-  embed: false,
+  url: 'https://melon-ratio-56285034.figma.site/',
+  embed: true,
 };
 const SEED_BY_ID = Object.fromEntries(SEEDS.map(s => [s.id, s]));
 const CHAR_BY_ID = Object.fromEntries(CHARACTERS.map(c => [c.id, c]));
